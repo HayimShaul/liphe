@@ -9,36 +9,36 @@ class BinomialTournament {
 private:
 	typedef void UniteStrategy(Number &, const Number &);
 
-	class IsEmptyBoolean {
-	private:
-		bool _is;
-	public:
-		IsEmptyBoolean() : _is(true) {}
-		IsEmptyBoolean(bool b) : _is(b) {}
-		IsEmptyBoolean(const BinomialTournament<Number>::IsEmptyBoolean &b) : _is(b._is) {}
+	std::vector<Number *> _heap;
 
-		bool is() const { return _is; }
-		IsEmptyBoolean operator=(bool b) { _is = b; return *this; }
-		IsEmptyBoolean operator=(IsEmptyBoolean b) { _is = b._is; return *this; }
-		operator bool() const { return is(); }
-	};
+	void set_slot_empty(int i) { delete _heap[i]; _heap[i] = NULL; }
+	void set_slot_full(int i) {}
 
-	std::vector< std::pair<Number, IsEmptyBoolean> > _heap;
-
-	void set_slot_empty(int i) { _heap[i].second = true; }
-	void set_slot_full(int i) { _heap[i].second = false; }
+	void clean_level(int level) {
+		if (_heap[level] != NULL) {
+			delete _heap[level];
+			_heap[level] = NULL;
+		}
+	}
 
 	UniteStrategy *_unite_strategy;
 public:
-	BinomialTournament(UniteStrategy *unite_strategy) : _heap(10) { _unite_strategy = unite_strategy; }
+	BinomialTournament(UniteStrategy *unite_strategy) : _heap(0) { _unite_strategy = unite_strategy; }
+	~BinomialTournament() {
+		for (int i = 0; i < _heap.size(); ++i) {
+			clean_level(i);
+		}
+	}
 	void add_to_tournament(const Number &, int level = 0);
 	Number unite_all(UniteStrategy *u = NULL) const;
 	int levels() const;
 	int max_level() const { return _heap.size(); }
-	bool is_slot_empty(int i) const { return _heap[i].second.is() ; }
+	bool is_slot_empty(int i) const { return (i >= _heap.size()) || (_heap[i] == NULL) ; }
+	bool is_empty() const { return levels() == 0; }
 
-	Number &number(int i) { return _heap[i].first; }
-	const Number &number(int i) const { return _heap[i].first; }
+	void set_number_in_level(int level, Number *n) { clean_level(level);  _heap[level] = n; }
+	Number &number(int i) { return *_heap[i]; }
+	const Number &number(int i) const { return *_heap[i]; }
 
 	static void add(Number &x, const Number &y) { x += y; }
 	static void mul(Number &x, const Number &y) { x *= y; }
@@ -67,7 +67,7 @@ int BinomialTournament<Number>::levels() const {
 
 template<class Number>
 void BinomialTournament<Number>::add_to_tournament(const Number &n, int level) {
-	Number toAdd = n;
+	Number *toAdd = new Number(n);
 
 	while (1) {
 		if (_heap.size() <= level) {
@@ -75,11 +75,11 @@ void BinomialTournament<Number>::add_to_tournament(const Number &n, int level) {
 		}
 
 		if (is_slot_empty(level)) {
-			number(level) = toAdd;
+			set_number_in_level(level, toAdd);
 			set_slot_full(level);
 			return;
 		} else {
-			_unite_strategy(toAdd, number(level));
+			_unite_strategy(*toAdd, number(level));
 			set_slot_empty(level);
 			++level;
 		}

@@ -56,6 +56,9 @@ public:
 
 	const Ctxt &v() const { return _val; }
 
+	int add_depth() const { return _add_depth; }
+	int mul_depth() const { return _mul_depth; }
+
 	void shift_right() { _val.divideByP(); }
 
 	HelibNumber operator-(const HelibNumber &z) const { HelibNumber zp(*this); zp -= z; return zp; }
@@ -64,21 +67,34 @@ public:
 
 	void operator-=(const HelibNumber &z) {
 		assert(_keys == z._keys);
+//std::cerr << "before -=\n";
+//std::cerr << "  level=" << _val.findBaseLevel() << ", log(noise/modulus)~" << _val.log_of_ratio() << endl;
 		_val -= z._val;
+//std::cerr << "after -=\n";
+//std::cerr << "  level=" << _val.findBaseLevel() << ", log(noise/modulus)~" << _val.log_of_ratio() << endl;
 		_mul_depth = max(_mul_depth, z._mul_depth);
 		_add_depth = max(_add_depth, z._add_depth) + 1;
 	}
 
 	void operator+=(const HelibNumber &z) {
 		assert(_keys == z._keys);
+//std::cerr << "before +=\n";
+//std::cerr << "   level=" << _val.findBaseLevel() << ", log(noise/modulus)~" << _val.log_of_ratio() << endl;
 		_val += z._val;
+//std::cerr << "after +=\n";
+//std::cerr << "  level=" << _val.findBaseLevel() << ", log(noise/modulus)~" << _val.log_of_ratio() << endl;
 		_mul_depth = max(_mul_depth, z._mul_depth);
 		_add_depth = max(_add_depth, z._add_depth) + 1;
 	}
 
 	void operator*=(const HelibNumber &z) {
 		assert(_keys == z._keys);
-		_val *= z._val;
+//std::cerr << "  before *= " << std::endl;
+//std::cerr << "  level=" << _val.findBaseLevel() << ", log(noise/modulus)~" << _val.log_of_ratio() << endl;
+		//_val *= z._val;
+		_val.multiplyBy(z._val);
+//std::cerr << "  after *= " << std::endl;
+//std::cerr << "  level=" << _val.findBaseLevel() << ", log(noise/modulus)~" << _val.log_of_ratio() << endl;
 		_mul_depth = max(_mul_depth, z._mul_depth) + 1;
 		_add_depth = max(_add_depth, z._add_depth);
 	}

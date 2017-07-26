@@ -9,7 +9,7 @@ FHELIBDIR = -L/home/hayim/academic/fhe/HElib-master/src
 HEADSUPINCDIR = -I../include
 INCS = $(NTLINCDIR) $(FHEINCDIR) $(HEADSUPINCDIR)
 
-OBJ = helib_keys.o helib_number.o
+OBJ = helib_keys.o helib_number.o primes.o
 
 libliphe.a: $(OBJ)
 	ar rUv libliphe.a $(OBJ)

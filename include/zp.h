@@ -54,6 +54,9 @@ public:
 	long long inv(long long x) const { assert(r() == 1); return (p() <= 3) ? x : power(x, p() - 2); }
 	long long mod(long long x) const { return ((x % get_ring_size()) + get_ring_size()) % get_ring_size(); }
 
+	int add_depth() const { return _add_depth; }
+	int mul_depth() const { return _mul_depth; }
+
 	ZP &operator=(const ZP &b) {
 		_p = b._p;
 		_r = b._r;

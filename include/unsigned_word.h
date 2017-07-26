@@ -25,6 +25,19 @@ public:
 	UnsignedWord(int n = 0);
 	UnsignedWord(const Bit &b);
 
+	~UnsignedWord() {
+	}
+
+	UnsignedWord<MAX_BIT_NUM, Bit> from_int(int c) {
+		UnsignedWord<MAX_BIT_NUM, Bit> ret(c);
+		return ret;
+	}
+
+	static UnsignedWord<MAX_BIT_NUM, Bit> static_from_int(int c) {
+		UnsignedWord<MAX_BIT_NUM, Bit> ret(c);
+		return ret;
+	}
+
 	void operator+=(const UnsignedWord &w);
 	void operator-=(const UnsignedWord &w);
 	void operator*=(const UnsignedWord &w) { *this = *this * w; }
@@ -49,8 +62,12 @@ public:
 	Bit operator>(const UnsignedWord<MAX_BIT_NUM, Bit> &b) const;
 	Bit operator<(const UnsignedWord<MAX_BIT_NUM, Bit> &b) const { return b.operator>(*this); }
 
+	Bit operator<(const int &b) const;
+	Bit operator>(const int &b) const;
+
 //	void setBitLength(int i) { _bits.resize(i); }
 	int bitLength() const { return _bits.size(); }
+	int size() const { return _bits.size(); }
 	unsigned long to_int() const;
 //	std::ostream &operator<<(std::ostream &out);
 
@@ -67,6 +84,11 @@ inline UnsignedWord<MAX_BIT_NUM, Bit>::UnsignedWord(int n) {
 		_bits.push_back(Bit(n & 1));
 		n >>= 1;
 	}
+}
+
+template<int MAX_BIT_NUM, class Bit>
+inline UnsignedWord<MAX_BIT_NUM, Bit>::UnsignedWord(const Bit &n) {
+	_bits.push_back(n);
 }
 
 template<int MAX_BIT_NUM, class Bit>
@@ -189,6 +211,68 @@ unsigned long UnsignedWord<MAX_BIT_NUM, Bit>::to_int() const {
 	return r;
 }
 
+// Assumes the bits of the nummber are wither 1 or 0
+// output is a bit (i.e. 0 or 1)
+// does not require the ring size to be 2
+#define get_bit(x, w) (((x) >> (w)) & 1)
+template<int MAX_BIT_NUM, class Bit>
+Bit UnsignedWord<MAX_BIT_NUM, Bit>::operator<(const int &w) const {
+std::cerr << "UnignedWord:::operator<" << std::endl;
+
+	// nothing is smaller than 0 (in Z_p)
+	if (w == 0)
+		return Bit(0);
+
+	// If our bitLength is shorter than bit length of w, we are smaller no need to continue
+	if ((1 << bitLength()) - 1 < w)
+		return Bit(1);
+
+	// we know that bitLength() > wBitLength because previousl checked so
+
+	BinomialTournament<Bit> isSmaller( BinomialTournament<Bit>::add );
+
+	BinomialTournament<Bit> equalPrefix( BinomialTournament<Bit>::mul );
+	for (int i = bitLength() - 1; i >= 0; --i) {
+		if (get_bit(w, i) == 1) {
+			isSmaller.add_to_tournament( equalPrefix.unite_all() * (Bit(1) - (*this)[i]) );
+			equalPrefix.add_to_tournament( (*this)[i] );
+		} else {
+			equalPrefix.add_to_tournament( Bit(1) - (*this)[i] );
+		}
+	}
+
+	return isSmaller.unite_all();
+}
+
+
+template<int MAX_BIT_NUM, class Bit>
+Bit UnsignedWord<MAX_BIT_NUM, Bit>::operator>(const int &w) const {
+	// If our bitLength is shorter than bit length of w, we are smaller no need to continue
+	if ((1 << bitLength()) - 1 < w) {
+		return Bit(0);
+	}
+
+	// we know that bitLength() > wBitLength because previousl checked so
+
+	BinomialTournament<Bit> isLarger( BinomialTournament<Bit>::add );
+
+	BinomialTournament<Bit> equalPrefix( BinomialTournament<Bit>::mul );
+	for (int i = bitLength() - 1; i >= 0; --i) {
+		if (get_bit(w, i) == 0) {
+			if (i == bitLength() - 1)
+				isLarger.add_to_tournament( (*this)[i] );
+			else
+				isLarger.add_to_tournament( equalPrefix.unite_all() * (*this)[i] );
+			equalPrefix.add_to_tournament( (*this)[i] );
+		} else {
+			equalPrefix.add_to_tournament( Bit(1) - (*this)[i] );
+		}
+	}
+
+	return isLarger.unite_all();
+}
+#undef get_bit
+
 template<int MAX_BIT_NUM, class Bit>
 Bit UnsignedWord<MAX_BIT_NUM, Bit>::operator>(const UnsignedWord<MAX_BIT_NUM, Bit> &w) const {
 	int i;
@@ -284,6 +368,12 @@ UnsignedWord<MAX_BIT_NUM, Bit> min(const UnsignedWord<MAX_BIT_NUM, Bit> &a, cons
 //		out << w[i];
 //	return out;
 //}
+
+class TruncConversion {
+public:
+	template<int MAX_BIT_NUM, class Bit>
+	static Bit convert(const UnsignedWord<MAX_BIT_NUM, Bit> &w) { return w[0]; }
+};
 
 #endif
 

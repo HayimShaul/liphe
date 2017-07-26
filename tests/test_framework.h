@@ -6,18 +6,18 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define skipDoTest(name, func, CLASS, data, iter, seed)                                                  \
+#define skipDoTest(name, func, Number, data, iter, seed)                                                  \
 	std::cout << "Skipping test " << name << std::endl;
 
 
-#define doTest(name, func, CLASS, data, iter, seed)                                                      \
+#define doTest(name, func, Number, data, iter, seed)                                                      \
 	do {                                                                                                 \
 		srand(seed);                                                                                     \
 		int i = 0;                                                                                       \
 		bool ok = true;                                                                                  \
 		clock_t start = clock();																		 \
 		while ((i < iter) && (ok)) {                                                                     \
-			ok = func<CLASS>(data);                                                                      \
+			ok = func<Number>(data);                                                                      \
 			++i;                                                                                         \
 		}                                                                                                \
 		std::cout << "Test " << name << "     ";                                                         \
@@ -32,99 +32,127 @@
 
 // testing arithmetic functionality
 
-template<class CLASS>
+template<class Number>
 inline bool test_add(void *data) {
-	int a = CLASS::static_in_range(rand());
-	int b = CLASS::static_in_range(rand());
+	int a = Number::static_in_range(rand());
+	int b = Number::static_in_range(rand());
 
-	CLASS A(a);
-	CLASS B(b);
+	Number A(a);
+	Number B(b);
 
-	CLASS C = A + B;
+	Number C = A + B;
 
 	int c = C.to_int();
 
-	return (c == CLASS::static_in_range(a+b));
+	return (c == Number::static_in_range(a+b));
 }
 
-template<class CLASS>
+template<class Number>
 inline bool test_sub(void *data) {
-	int a = CLASS::static_in_range(rand());
-	int b = CLASS::static_in_range(rand());
+	int a = Number::static_in_range(rand());
+	int b = Number::static_in_range(rand());
 
-	CLASS A(a);
-	CLASS B(b);
+	Number A(a);
+	Number B(b);
 
-	CLASS C = A - B;
+	Number C = A - B;
 
 	int c = C.to_int();
 
-	return (c == CLASS::static_in_range(a-b));
+	return (c == Number::static_in_range(a-b));
 }
 
-template<class CLASS>
+template<class Number>
 inline bool test_mul(void *data) {
-	int a = CLASS::static_in_range(rand());
-	int b = CLASS::static_in_range(rand());
+	int a = Number::static_in_range(rand());
+	int b = Number::static_in_range(rand());
 
-	CLASS A(a);
-	CLASS B(b);
+	Number A(a);
+	Number B(b);
 
-	CLASS C = A * B;
+	Number C = A * B;
 
 	int c = C.to_int();
 
-	return (c == CLASS::static_in_range(a*b));
+	return (c == Number::static_in_range(a*b));
 }
 
-template<class CLASS>
+template<class Number>
+inline bool test_bitwise_less_than(void *data) {
+	int a = Number::static_in_range(rand());
+	int b = Number::static_in_range(rand());
+
+	Number A(a);
+
+	Number C = A < b;
+
+	int c = C.to_int();
+
+	return (c == (a < b));
+}
+
+template<class Number>
+inline bool test_bitwise_more_than(void *data) {
+	int a = Number::static_in_range(rand());
+	int b = Number::static_in_range(rand());
+
+	Number A(a);
+
+	Number C = A > b;
+
+	int c = C.to_int();
+
+	return (c == (a > b));
+}
+
+template<class Number>
 inline bool test_euler_eq(void *data) {
-	int a = CLASS::static_in_range(rand());
-	int b = CLASS::static_in_range(rand());
+	int a = Number::static_in_range(rand());
+	int b = Number::static_in_range(rand());
 
-	CLASS A(a);
-	CLASS B(b);
+	Number A(a);
+	Number B(b);
 
-	CLASS C = eq_euler(A, B);
+	Number C = eq_euler(A, B);
 
 	int c = C.to_int();
 
 	return (c == ((a == b) ? 1 : 0));
 }
 
-template<class CLASS>
+template<class Number>
 inline bool test_binomial_tournament(void *data) {
 	int size = rand() % 1000;
 
 	int a;
-	CLASS A;
+	Number A;
 
 	int sum = 0;
-	BinomialTournament<CLASS> binTour(BinomialTournament<CLASS>::add);
+	BinomialTournament<Number> binTour(BinomialTournament<Number>::add);
 
 	for (int i = 0; i < size; ++i) {
-		a = CLASS::static_in_range(rand());
-		A = CLASS(a);
+		a = Number::static_in_range(rand());
+		A = Number(a);
 
 		sum += a;
 		binTour.add_to_tournament(A);
 	}
 
-	CLASS C = binTour.unite_all();
+	Number C = binTour.unite_all();
 	int c = C.to_int();
 
-	return (c == CLASS::static_in_range(sum));
+	return (c == Number::static_in_range(sum));
 }
 
-template<class CLASS>
+template<class Number>
 inline bool test_find_first_in_array(void *data) {
 	int log_size = 3;
 	int size = rand() % (1 << log_size);
 	size = 1 << log_size;
 
-	CLASS *array = new CLASS[size];
+	Number *array = new Number[size];
 	int *int_array = new int[size];
-	std::vector<CLASS> output;
+	std::vector<Number> output;
 	output.resize(log_size);
 
 int_array[0] = 0;
@@ -138,10 +166,10 @@ int_array[7] = 1;
 
 	for (int i = 0; i < size; ++i) {
 //		int_array[i] = rand() & 1;
-		array[i] = CLASS(int_array[i]);
+		array[i] = Number(int_array[i]);
 	}
 
-	BinarySearch<CLASS, IsZeroEulerStrategy<CLASS> >::searchFirst(array, 5, output);
+	BinarySearch<Number, IsZeroEulerStrategy<Number> >::searchFirst(array, 5, output);
 
 	int class_place = 0;
 	for (int i = 0; i < log_size; ++i) {

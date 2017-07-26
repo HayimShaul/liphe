@@ -1,12 +1,16 @@
 #ifndef __EQ__
 #define __EQ__
 
+#include <iostream>
+
 
 template<class CLASS>
 CLASS power(const CLASS &x, int e) {
 	assert(e > 0);
-	if (e == 2)
-		return x * x;
+	if (e == 2) {
+		CLASS y = x * x;
+		return y;
+	}
 	if (e == 1)
 		return x;
 
