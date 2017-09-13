@@ -11,7 +11,7 @@ private:
 
 	std::vector<Number *> _heap;
 
-	void set_slot_empty(int i) { delete _heap[i]; _heap[i] = NULL; }
+	void set_slot_empty(int i) { clean_level(i); }
 	void set_slot_full(int i) {}
 
 	void clean_level(int level) {
@@ -88,6 +88,7 @@ void BinomialTournament<Number>::add_to_tournament(const Number &n, int level) {
 
 template<class Number>
 Number BinomialTournament<Number>::unite_all(UniteStrategy *unite_strategy) const {
+	assert(!is_empty());
 	if (unite_strategy == NULL)
 		unite_strategy = _unite_strategy;
 

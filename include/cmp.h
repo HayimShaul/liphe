@@ -28,6 +28,35 @@ public:
 	Number operator<(int b) const { return _val < b; }
 	Number operator>=(int b) const { return _val >= b; }
 	Number operator>(int b) const { return _val > b; }
+
+
+	Number operator==(Number &b) const { return _val == b; }
+	Number operator<=(const Number &b) const { return _val <= b; }
+	Number operator<(const Number &b) const { return _val < b; }
+	Number operator>=(const Number &b) const { return _val >= b; }
+	Number operator>(const Number &b) const { return _val > b; }
+};
+
+template <class Number>
+class ComparePoly {
+private:
+	const Number &_val;
+
+	Polynomial<Number> range_polynomial(int min, int max) {
+		int phi = ::phi(_val.p());
+		Polynomial<Number> poly(0);
+		for (int i = 1; i < _val.p()/2; ++i)
+			poly += Polynomial<Number>(1) - Polynomial<Number>(1, "-x")^phi;
+		return poly;
+	}
+
+public:
+	ComparePoly(const Number &v) : _val(v) {}
+
+	Number operator<(const Number &b) const {
+		Polynomial<Number> poly = range_polynomial(1, _val.p()/2) % _val.p();
+		return poly.compute(_val -b);
+	}
 };
 
 #endif

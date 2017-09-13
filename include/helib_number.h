@@ -19,6 +19,28 @@ private:
 			ret *= base;
 		return ret;
 	}
+
+	HelibNumber mult_by_recursive_adding(const HelibNumber &x, int e) {
+		assert(e >= 0);
+		if (e == 0)
+			return HelibNumber(0);
+
+		if (e == 2) {
+			HelibNumber y = x + x;
+			return y;
+		}
+		if (e == 1)
+			return x;
+
+		if (e & 1) {
+			return x + mult_by_recursive_adding(x, e-1);
+		} else {
+			return mult_by_recursive_adding(x + x, e/2);
+		}
+	}
+
+
+
 public:
 	HelibNumber() : _keys(_prev_keys), _val(_prev_keys->publicKey()), _mul_depth(0), _add_depth(0) {}
 	HelibNumber(long long v) : _keys(_prev_keys), _val(_keys->publicKey()), _mul_depth(0), _add_depth(0) { _keys->encrypt(_val, v); }
@@ -61,6 +83,12 @@ public:
 
 	void shift_right() { _val.divideByP(); }
 
+	void negate() { _val.negate(); }
+
+
+
+
+	HelibNumber operator-() const { HelibNumber zp(*this); zp.negate(); return zp; }
 	HelibNumber operator-(const HelibNumber &z) const { HelibNumber zp(*this); zp -= z; return zp; }
 	HelibNumber operator+(const HelibNumber &z) const { HelibNumber zp(*this); zp += z; return zp; }
 	HelibNumber operator*(const HelibNumber &z) const { HelibNumber zp(*this); zp *= z; return zp; }
@@ -78,26 +106,31 @@ public:
 
 	void operator+=(const HelibNumber &z) {
 		assert(_keys == z._keys);
-//std::cerr << "before +=\n";
-//std::cerr << "   level=" << _val.findBaseLevel() << ", log(noise/modulus)~" << _val.log_of_ratio() << endl;
 		_val += z._val;
-//std::cerr << "after +=\n";
-//std::cerr << "  level=" << _val.findBaseLevel() << ", log(noise/modulus)~" << _val.log_of_ratio() << endl;
 		_mul_depth = max(_mul_depth, z._mul_depth);
 		_add_depth = max(_add_depth, z._add_depth) + 1;
 	}
 
 	void operator*=(const HelibNumber &z) {
 		assert(_keys == z._keys);
-//std::cerr << "  before *= " << std::endl;
-//std::cerr << "  level=" << _val.findBaseLevel() << ", log(noise/modulus)~" << _val.log_of_ratio() << endl;
-		//_val *= z._val;
 		_val.multiplyBy(z._val);
-//std::cerr << "  after *= " << std::endl;
-//std::cerr << "  level=" << _val.findBaseLevel() << ", log(noise/modulus)~" << _val.log_of_ratio() << endl;
 		_mul_depth = max(_mul_depth, z._mul_depth) + 1;
 		_add_depth = max(_add_depth, z._add_depth);
 	}
+
+
+
+
+
+
+	HelibNumber operator-(int z) const { HelibNumber zp(*this); zp -= z; return zp; }
+	HelibNumber operator+(int z) const { HelibNumber zp(*this); zp += z; return zp; }
+	HelibNumber operator*(int z) const { HelibNumber zp(*this); zp *= z; return zp; }
+
+	void operator-=(int z) { operator-=(HelibNumber(z)); }
+	void operator+=(int z) { operator+=(HelibNumber(z)); }
+	void operator*=(int z) { *this = mult_by_recursive_adding(*this, z); }
+
 
 	void reduceNoiseLevel() {
 		_val.modDownToLevel(_val.findBaseLevel());

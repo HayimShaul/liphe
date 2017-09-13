@@ -26,12 +26,14 @@ private:
 			ret *= base;
 		return ret;
 	}
+
+	void set_all(long long a) { for (int i = 0; i < SIMD_SIZE; ++i) _val[i] = mod(a); }
 		
 public:
 	ZP() : _p(_prev_p), _r(_prev_r),  _mul_depth(0), _add_depth(0) {}
-	ZP(long long v) : _p(_prev_p), _r(_prev_r),  _mul_depth(0), _add_depth(0) { _val[0] = mod(v); }
-	ZP(long long v, long long p) : _p(p), _r(_prev_r),  _mul_depth(0), _add_depth(0) { _val[0] = mod(v); }
-	ZP(long long v, long long p, long long r) : _p(p), _r(r),  _mul_depth(0), _add_depth(0) { _val[0] = mod(v); }
+	ZP(long long v) : _p(_prev_p), _r(_prev_r),  _mul_depth(0), _add_depth(0) { set_all(v); }
+	ZP(long long v, long long p) : _p(p), _r(_prev_r),  _mul_depth(0), _add_depth(0) { set_all(v); }
+	ZP(long long v, long long p, long long r) : _p(p), _r(r),  _mul_depth(0), _add_depth(0) { set_all(v); }
 	ZP(const ZP &zp) : _p(zp._p), _r(zp._r), _mul_depth(zp._mul_depth), _add_depth(zp._add_depth) {
 		for (int i = 0; i < SIMD_SIZE; ++i)
 			_val[i] = zp._val[i];
@@ -75,9 +77,17 @@ public:
 			_val[i] /= _p;
 	}
 
+	ZP operator-() const {
+		ZP zp(*this);
+		for (int i = 0; i < SIMD_SIZE; ++i)
+			zp._val[i] = -zp._val[i];
+		return zp;
+	}
+
 	ZP operator-(const ZP &z) const { ZP zp(*this); zp -= z; return zp; }
 	ZP operator+(const ZP &z) const { ZP zp(*this); zp += z; return zp; }
 	ZP operator*(const ZP &z) const { ZP zp(*this); zp *= z; return zp; }
+	ZP operator!() const { ZP zp(*this); zp = ZP(1) - zp; return zp; }
 
 	void operator-=(const ZP &z) {
 		assert(_p == z._p);

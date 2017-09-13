@@ -2,9 +2,8 @@
 #include <assert.h>
 #include "primes.h"
 
-int find_prime_bigger_than(int p) {
-	static int primes[] =
-    {2,      3 ,      5,      7 ,     11 ,     13 ,     17 ,     19 ,     23 ,     29 , 
+static int primes[] = {
+	   2,      3 ,      5,      7 ,     11 ,     13 ,     17 ,     19 ,     23 ,     29 , 
      31 ,     37 ,     41 ,     43 ,     47 ,     53 ,     59 ,     61 ,     67 ,     71 , 
      73 ,     79 ,     83 ,     89 ,     97 ,    101 ,    103 ,    107 ,    109 ,    113 , 
     127 ,    131 ,    137 ,    139 ,    149 ,    151 ,    157 ,    163 ,    167 ,    173 , 
@@ -1007,9 +1006,18 @@ int find_prime_bigger_than(int p) {
 };
 
 
-	for (int i = 0; i < sizeof(primes); ++i)
-		if (primes[i] >= p)
-			return primes[i];
+int Primes::prime_no() {
+	return sizeof(primes) / sizeof(primes[0]);
+}
+
+int Primes::prime(int i) {
+	return primes[i];
+}
+
+int Primes::find_prime_bigger_than(int p) {
+	for (int i = 0; i < prime_no(); ++i)
+		if (prime(i) >= p)
+			return prime(i);
 	std::cerr << "Cannot find a prime bigger than " << p << ". Either I have a truncated list or there are only a finite number of primes" << std::endl;
 	assert(0);
 	return -1;
