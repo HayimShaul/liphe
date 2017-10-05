@@ -24,6 +24,23 @@ CLASS power(const CLASS &x, int e) {
 }
 
 template<class CLASS>
+CLASS power_mod(const CLASS &x, int e, int mod) {
+	assert(e > 0);
+	if (e == 2) {
+		CLASS y = (x * x) % mod;
+		return y;
+	}
+	if (e == 1)
+		return x;
+
+	if (e & 1) {
+		return (x*power(x, e-1)) % mod;
+	} else {
+		return power((x*x) % mod, e/2);
+	}
+}
+
+template<class CLASS>
 CLASS isNonZero_Euler(const CLASS &r) {
 	int p = r.get_ring_size();
 	r.assert_co_prime(p);

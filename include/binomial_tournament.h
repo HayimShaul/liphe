@@ -25,15 +25,15 @@ private:
 public:
 	BinomialTournament(UniteStrategy *unite_strategy) : _heap(0) { _unite_strategy = unite_strategy; }
 	~BinomialTournament() {
-		for (int i = 0; i < _heap.size(); ++i) {
+		for (unsigned int i = 0; i < _heap.size(); ++i) {
 			clean_level(i);
 		}
 	}
-	void add_to_tournament(const Number &, int level = 0);
+	void add_to_tournament(const Number &, unsigned int level = 0);
 	Number unite_all(UniteStrategy *u = NULL) const;
 	int levels() const;
 	int max_level() const { return _heap.size(); }
-	bool is_slot_empty(int i) const { return (i >= _heap.size()) || (_heap[i] == NULL) ; }
+	bool is_slot_empty(unsigned int i) const { return (i >= _heap.size()) || (_heap[i] == NULL) ; }
 	bool is_empty() const { return levels() == 0; }
 
 	void set_number_in_level(int level, Number *n) { clean_level(level);  _heap[level] = n; }
@@ -59,14 +59,14 @@ public:
 template<class Number>
 int BinomialTournament<Number>::levels() const {
 	int count = 0;
-	for (int i = 0; i < _heap.size(); ++i)
+	for (unsigned int i = 0; i < _heap.size(); ++i)
 		if (!is_slot_empty(i))
 			++count;
 	return count;
 }
 
 template<class Number>
-void BinomialTournament<Number>::add_to_tournament(const Number &n, int level) {
+void BinomialTournament<Number>::add_to_tournament(const Number &n, unsigned int level) {
 	Number *toAdd = new Number(n);
 
 	while (1) {
@@ -93,7 +93,7 @@ Number BinomialTournament<Number>::unite_all(UniteStrategy *unite_strategy) cons
 		unite_strategy = _unite_strategy;
 
 	Number n;
-	int i = 0;
+	unsigned int i = 0;
 	while ((i < _heap.size()) && is_slot_empty(i))
 		++i;
 

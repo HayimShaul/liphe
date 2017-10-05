@@ -44,8 +44,11 @@ private:
 public:
 	HelibNumber() : _keys(_prev_keys), _val(_prev_keys->publicKey()), _mul_depth(0), _add_depth(0) {}
 	HelibNumber(long long v) : _keys(_prev_keys), _val(_keys->publicKey()), _mul_depth(0), _add_depth(0) { _keys->encrypt(_val, v); }
+	HelibNumber(const std::vector<long> &v) : _keys(_prev_keys), _val(_keys->publicKey()), _mul_depth(0), _add_depth(0) { _keys->encrypt(_val, v); }
 	HelibNumber(const HelibNumber &n) : _keys(n._keys), _val(n._val), _mul_depth(n._mul_depth), _add_depth(n._add_depth) {}
+	HelibNumber(const Ctxt &n) : _keys(_prev_keys), _val(n), _mul_depth(0), _add_depth(0) {}
 
+	static int global_p() { return _prev_keys->p(); }
 	static void set_global_keys(HelibKeys *k) { _prev_keys = k; }
 	int in_range(int a) const { while (a < 0) a += _keys->p(); return a % _keys->p(); }
 	static int static_in_range(int a) { while (a < 0) a += _prev_keys->p(); return a % _prev_keys->p(); }
@@ -81,6 +84,9 @@ public:
 	int add_depth() const { return _add_depth; }
 	int mul_depth() const { return _mul_depth; }
 
+	void add_depth(int d) { _add_depth = d; }
+	void mul_depth(int d) { _mul_depth = d; }
+
 	void shift_right() { _val.divideByP(); }
 
 	void negate() { _val.negate(); }
@@ -88,6 +94,7 @@ public:
 
 
 
+	HelibNumber operator!() const { HelibNumber zp(1); zp -= *this; return zp; }
 	HelibNumber operator-() const { HelibNumber zp(*this); zp.negate(); return zp; }
 	HelibNumber operator-(const HelibNumber &z) const { HelibNumber zp(*this); zp -= z; return zp; }
 	HelibNumber operator+(const HelibNumber &z) const { HelibNumber zp(*this); zp += z; return zp; }
@@ -119,10 +126,6 @@ public:
 	}
 
 
-
-
-
-
 	HelibNumber operator-(int z) const { HelibNumber zp(*this); zp -= z; return zp; }
 	HelibNumber operator+(int z) const { HelibNumber zp(*this); zp += z; return zp; }
 	HelibNumber operator*(int z) const { HelibNumber zp(*this); zp *= z; return zp; }
@@ -131,6 +134,56 @@ public:
 	void operator+=(int z) { operator+=(HelibNumber(z)); }
 	void operator*=(int z) { *this = mult_by_recursive_adding(*this, z); }
 
+//	template<class BITS>
+//	BITS to_digits() const {
+//		assert(p() == 2);
+//		assert(r() > 1);
+//
+//		vector<Ctxt> bits;
+//		extractDigits(bits, _val, 0, false);
+//
+//		BITS ret;
+//		ret.set_bit_length(bits.size());
+//		for (int i = 0; i < bits.size(); ++i) {
+//			HelibNumber bit(bits[i]);
+//			bit.mul_depth(mul_depth());
+//			bit.add_depth(add_depth());
+//			ret.set_bit(i, bit);
+//		}
+//		return ret;
+//	}
+
+	template<class BITS>
+	BITS to_digits() const {
+		assert(p() == 2);
+		assert(r() > 1);
+
+		HelibNumber n = *this;
+		BITS ret;
+		ret.set_bit_length(r());
+
+		for (int i = 0; i < r(); ++i) {
+			std::vector<Ctxt> bits;
+			extractDigits(bits, n._val, 0, false);
+
+			HelibNumber bit(bits[0]);
+std::cout << "bit = " << bit.to_int() << std::endl;
+			bit.mul_depth(mul_depth());
+			bit.add_depth(add_depth());
+			ret.set_bit(i, bit);
+
+			if (i != r() - 1) {
+				std::cout << "before dividing " << n.to_int() << std::endl;
+				n -= bit;
+				HelibNumber half_n = n;
+				half_n._val.divideByP();
+				n -= half_n;
+				std::cout << "after dividing " << n.to_int() << std::endl;
+			}
+		}
+
+		return ret;
+	}
 
 	void reduceNoiseLevel() {
 		_val.modDownToLevel(_val.findBaseLevel());

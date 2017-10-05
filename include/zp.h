@@ -48,6 +48,7 @@ public:
 	static ZP static_from_int(int i) { return ZP(i); }
 
 	static void set_global_p(long long p, long long r = 1) { _prev_p = p; _prev_r = r; }
+	static int global_p() { return _prev_p; }
 	static int get_global_ring_size() { return power(_prev_p, _prev_r); }
 	void set_p(long long p, long long r = 1) { _p = _prev_p = p; _r = _prev_r = r; }
 	long long p() const { return _p; }
@@ -114,6 +115,20 @@ public:
 			_val[i] = mod(_val[i] * z._val[i]);
 		_mul_depth = std::max(_mul_depth, z._mul_depth) + 1;
 		_add_depth = std::max(_add_depth, z._add_depth);
+	}
+
+	template<class BITS>
+	BITS to_digits() const {
+		BITS ret;
+		ret.set_bit_length(r());
+		for (int i = 0; i < r(); ++i) {
+			ZP<SIMD_SIZE> bit;
+			for (int s = 0; s < SIMD_SIZE; ++s) {
+				bit._val[s] = (_val[s] / power(p(), i)) % p();
+			}
+			ret.set_bit(i, bit);
+		}
+		return ret;
 	}
 
 	void assert_co_prime(int a) const {

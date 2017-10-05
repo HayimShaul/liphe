@@ -1,10 +1,10 @@
-CCFLAGS = -g
+CCFLAGS = -g -Wall
 
-NTLINCDIR = -I/home/hayim/academic/fhe/ntl-9.6.2/include
-NTLLIBDIR = -L/home/hayim/academic/fhe/ntl-9.6.2/src
+NTLINCDIR = -I/home/hayim/academic/fhe/ntl-10.5.0/include
+NTLLIBDIR = -L/home/hayim/academic/fhe/ntl-10.5.0/src
 
-FHEINCDIR = -I/home/hayim/academic/fhe/HElib-master/src
-FHELIBDIR = -L/home/hayim/academic/fhe/HElib-master/src
+FHEINCDIR = -I/home/hayim/academic/fhe/HElib/src
+FHELIBDIR = -L/home/hayim/academic/fhe/HElib/src
 
 HEADSUPINCDIR = -I../include
 INCS = $(NTLINCDIR) $(FHEINCDIR) $(HEADSUPINCDIR)

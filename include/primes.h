@@ -1,4 +1,5 @@
 #ifndef ___PRIME_LIPHE___
+#define ___PRIME_LIPHE___
 
 #include <vector>
 
@@ -13,7 +14,7 @@ class Factorization {
 	std::vector<int> multiplicity;
 
 	int find_prime(int p) {
-		int i;
+		unsigned int i;
 		for (i = 0; i < primes.size(); ++i)
 			if (primes[i] == p)
 				return i;
@@ -30,7 +31,7 @@ public:
 
 	void factor(int x) {
 		int p_i = 0;
-		while ((p_i < Primes::prime_no()) && (x != 1)) {
+		while ((p_i < Primes::prime_no()) && (x != 1) && (Primes::prime(p_i) <= x)) {
 			while (((x % Primes::prime(p_i)) == 0) && (x != 1)) {
 				add_factor(Primes::prime(p_i));
 				x /= Primes::prime(p_i);

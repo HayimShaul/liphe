@@ -3,6 +3,7 @@
 
 #include <math.h>
 #include <vector>
+#include <random>
 
 #include <print.h>
 #include "binomial_tournament.h"
@@ -16,46 +17,66 @@ public:
 //	typedef InNumber OutCostFunction(const OutNumber &);
 
 private:
+
+	int _m;
 	int _n;
-	int _count;
+	int _c;
+
+	std::function<int(int)> f_m;
+
 	BinomialTournament<OutNumber> _avg;
-	int _resample;
-	int _n_factor;
 	int _max_cost;
 //	CostFunction *_out_cost;
+
+	std::default_random_engine _generator;
+	std::uniform_int_distribution<int> _distribution;
 
 	int ceiling(float f) { return (int)(f+0.9999999); }
 
 public:
-	AverageLiphe(int n) : _n(n), _avg(BinomialTournament<OutNumber>::add), _resample(1), _n_factor(1), _max_cost(1) {}
+//	AverageLiphe(int n) : _m(n), _n(n), _avg(BinomialTournament<OutNumber>::add), _c(1), _max_cost(1), _generator(clock()), _distribution(0, n) {}
+	AverageLiphe(int n) : _m(n), _n(n), _c(1), _avg(BinomialTournament<OutNumber>::add), _max_cost(1), _generator(1), _distribution(0, n) {}
 //	AverageLiphe(int n, CostFunction *c) : _n(n), _avg(BinomialTournament<OutNumber>::add), _cost(c) {}
 
-	void set_resample_constant(int r) { _resample = r; }
-	void set_n_factor(int r) { _n_factor = r; }
+	void set_resample_constant(int r) { _c = r; }
+	void set_m(int m) { _m = m; _distribution = std::uniform_int_distribution<int>(0, m); }
 	void set_max_cost(int c) { _max_cost = c; }
+	void set_f_m(const std::function<int(int)> &f) { f_m = f; }
 
 	void compute_resample_constant(float delta, float epsilon, int max_sample) {
-		_resample = 1;
+		_c = 1;
 
-		int c;
 		// make sure [cm]/sample < 1
-		_resample = std::max(_resample, ceiling( (float) max_sample / (_n * _n_factor) ) );
+		if ((bool)f_m) {
+//			for (int m_i = 0; i <= _m; ++i)
+//				_c = std::max(_c, ceiling( (float) max_sample / f_m(m_i) ) );
+			// assume f_m is monotonously increasing
+			_c = std::max(_c, ceiling( (float) max_sample / f_m(_m) ) );
+		} else {
+			_c = std::max(_c, ceiling( (float) max_sample / _m ) );
+		}
 
-		// convert between Pr(...>delta) < eps    to   Pr(...>delta) < 2^-eps
-		epsilon = - log(epsilon) / log(2);
-		// make sure pr(..>delta) < eps
-		_resample = std::max(_resample, ceiling( (float) _max_cost * epsilon / (2 * _n * delta * delta)));
+//		// convert between Pr(...>delta) < eps    to   Pr(...>delta) < 2^-eps
+//		epsilon = - log(epsilon) / log(2);
+//		// make sure pr(..>delta) < eps
+//		_c = std::max(_c, ceiling( (float) _max_cost * epsilon / (delta * delta * 2 * _n)));
 
-		std::cerr << "resample = " << _resample << std::endl;
+		_distribution = std::uniform_int_distribution<int>(0, _c * _m); 
+
+		std::cerr << "c = " << _c << std::endl;
 	}
 
 	void add(const InNumber &x) {
-		for (int i = 0; i < _resample; ++i) {
-			int a_i = random() % (_n * _n_factor * _resample);
+		for (int i = 0; i < _c; ++i) {
+//			int a_i = random() % (_m * _c);
+			int a_i = _distribution(_generator);
+			if ((bool) f_m)
+				a_i = f_m(a_i);
+
 			// the case of a_i=0 is not interesting to compare to because when x_i = a_i = 0 it is not
 			// going to contribute to the average anyway
 
-//std::cerr << "comparing   *i > a_1 = " << (*i) << " > " << a_i << std::endl;
+//std::cerr << "comparing   x_i > a_1 = " << (x.to_int()) << " > " << a_i << std::endl;
 //std::cerr << "result = " << (CompareIn(*i) > a_i) << std::endl;
 			OutNumber addon = Convert::convert(CompareIn(x) > a_i);
 //std::cerr << "addon = " << addon << std::endl;
@@ -69,8 +90,10 @@ public:
 	}
 
 	void add_with_cost(const InNumber &x, const OutNumber &cost) {
-		for (int i = 0; i < _resample; ++i) {
-			int a_i = random() % (_n * _resample);
+		for (int i = 0; i < _c; ++i) {
+			int a_i = random() % (_m * _c);
+			if ((bool) f_m)
+				a_i = f_m(a_i);
 			// the case of a_i=0 is not interesting to compare to because when x_i = a_i = 0 it is not
 			// going to contribute to the average anyway
 
@@ -86,7 +109,11 @@ public:
 		}
 	}
 
-	OutNumber getAverage() const { return _avg.unite_all(); }
+	OutNumber getAverage() const {
+		if (_avg.is_empty())
+			return OutNumber(0);
+		return _avg.unite_all();
+	}
 };
 
 
@@ -101,13 +128,12 @@ public:
 template<class UnsignedWord, class OutNumber, class InNumber, class CompareIn, class Convert>
 class AverageLipheBits {
 	int _n;
+	int _m;
 	int _max_cost;
 	int _max_sample;
-	int _n_factor;
 	float _delta;
 	float _epsilon;
 	std::vector< AverageLiphe<OutNumber, InNumber, CompareIn, Convert> * > _bits;
-	std::vector<int> _resample;
 
 	void clean() {
 		for (int i = 0; i != _bits.size(); ++i) {
@@ -119,16 +145,11 @@ class AverageLipheBits {
 	}
 
 	void apply_constants() {
-		assert((_resample.size() == _bits.size()) || (_resample.size() == 0));
 		for (int i = 0; i < _bits.size(); ++i) {
-			if (_resample.size() == 0)
-				_bits[i]->set_resample_constant(1);
-			else
-				_bits[i]->set_resample_constant(_resample[i]);
-
 			_bits[i]->set_max_cost(_max_cost);
 
-			_bits[i]->set_n_factor(_n_factor * (1 << i));
+//			_bits[i]->set_m(_m * (1 << i));
+			_bits[i]->set_m(_m);
 
 			if ((_delta > 0) && (_epsilon > 0) && (_max_sample > 0))
 				_bits[i]->compute_resample_constant(_delta, _epsilon, _max_sample);
@@ -136,10 +157,10 @@ class AverageLipheBits {
 	}
 
 public:
-	AverageLipheBits(int n) : _n(n), _max_cost(1), _delta(0), _epsilon(0), _n_factor(1)  {}
+	AverageLipheBits(int n) : _n(n), _m(n), _max_cost(1), _max_sample(0), _delta(0), _epsilon(0)  {}
 	~AverageLipheBits() { clean(); }
 
-	void set_n_factor(int m) { _n_factor = m; apply_constants(); }
+	void set_m(int m) { _m = m; apply_constants(); }
 	void set_max_cost(int m) { _max_cost = m; apply_constants(); }
 
 	void compute_resample_constant(float delta, float epsilon, int max_sample) {
@@ -153,26 +174,24 @@ public:
 	void set_bit_number(int b) {
 		clean();
 		_bits.resize(b);
-		for (int i = 0; i < b; ++i) {
-			_bits[i] = new AverageLiphe<OutNumber, InNumber, CompareIn, Convert>(_n);
-			_bits[i]->set_n_factor(1 << i);
-		}
-		apply_constants();
-	}
-
-	void set_resample_constant(std::vector<int> c) {
-		_resample = c;
+		for (int i = 0; i < b; ++i)
+			_bits[i] = new AverageLiphe<OutNumber, InNumber, CompareIn, Convert>(_m);
 		apply_constants();
 	}
 
 	void add(const InNumber &xi) {
-		for (int i = 0; i < _bits.size(); ++i)
-			_bits[i]->add(xi);
+		for (int i = 0; i < _bits.size(); ++i) {
+			InNumber _xi = xi;
+			_xi >>= i;
+//std::cerr << "xi = ";
+//std::cerr << _xi.to_int() << std::endl;
+			_bits[i]->add(_xi);
+		}
 	}
 
 	void add_with_cost(const InNumber &xi, const OutNumber &cost) {
-		for (int i = 0; i < _bits.size(); ++i)
-			_bits[i]->add_with_cost(xi, cost);
+//		for (int i = 0; i < _bits.size(); ++i)
+//			_bits[i]->add_with_cost(xi, cost);
 	}
 
 	UnsignedWord get_bits() const {

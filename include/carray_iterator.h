@@ -16,11 +16,11 @@ public:
 
 	CArrayIterator &operator=(const CArrayIterator &a) { copy(a); return *this; }
 
-	int begin() { _location = 0; }
-	int end() { _location = _size; }
+	void begin() { _location = 0; }
+	void end() { _location = _size; }
 
-	bool is_end() { _location == _size; }
-	bool is_begin() { _location == 0; }
+	bool is_end() { return _location == _size; }
+	bool is_begin() { return _location == 0; }
 
 	void operator++() { ++_location; }
 
