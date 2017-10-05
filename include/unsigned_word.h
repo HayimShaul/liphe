@@ -37,6 +37,12 @@ public:
 	}
 
 	~UnsignedWord() {
+		for (int i = 0; i < bitLength(); ++i) {
+			if (_bits[i] != NULL) {
+				delete _bits[i];
+				_bits[i] = NULL;
+			}
+		}
 	}
 
 	UnsignedWord<MAX_BIT_NUM, Bit> from_int(int c) {

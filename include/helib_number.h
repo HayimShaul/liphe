@@ -39,14 +39,14 @@ private:
 		}
 	}
 
-
-
 public:
 	HelibNumber() : _keys(_prev_keys), _val(_prev_keys->publicKey()), _mul_depth(0), _add_depth(0) {}
 	HelibNumber(long long v) : _keys(_prev_keys), _val(_keys->publicKey()), _mul_depth(0), _add_depth(0) { _keys->encrypt(_val, v); }
 	HelibNumber(const std::vector<long> &v) : _keys(_prev_keys), _val(_keys->publicKey()), _mul_depth(0), _add_depth(0) { _keys->encrypt(_val, v); }
 	HelibNumber(const HelibNumber &n) : _keys(n._keys), _val(n._val), _mul_depth(n._mul_depth), _add_depth(n._add_depth) {}
 	HelibNumber(const Ctxt &n) : _keys(_prev_keys), _val(n), _mul_depth(0), _add_depth(0) {}
+
+	~HelibNumber() {}
 
 	static int global_p() { return _prev_keys->p(); }
 	static void set_global_keys(HelibKeys *k) { _prev_keys = k; }
