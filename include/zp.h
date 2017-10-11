@@ -32,6 +32,7 @@ private:
 public:
 	ZP() : _p(_prev_p), _r(_prev_r),  _mul_depth(0), _add_depth(0) {}
 	ZP(long long v) : _p(_prev_p), _r(_prev_r),  _mul_depth(0), _add_depth(0) { set_all(v); }
+	ZP(const std::vector<long int> &v) : _p(_prev_p), _r(_prev_r),  _mul_depth(0), _add_depth(0) { for (unsigned int i = 0; (i < v.size()) && (i < SIMD_SIZE); ++i) _val[i] = v[i]; }
 	ZP(long long v, long long p) : _p(p), _r(_prev_r),  _mul_depth(0), _add_depth(0) { set_all(v); }
 	ZP(long long v, long long p, long long r) : _p(p), _r(r),  _mul_depth(0), _add_depth(0) { set_all(v); }
 	ZP(const ZP &zp) : _p(zp._p), _r(zp._r), _mul_depth(zp._mul_depth), _add_depth(zp._add_depth) {
@@ -42,11 +43,13 @@ public:
 	int in_range(int a) const { while (a < 0) a += power(_p,_r); return a % power(_p,_r); }
 	static int static_in_range(int a) { while (a < 0) a += power(_prev_p,_prev_r); return a % power(_prev_p,_prev_r); }
 	int to_int() const { return _val[0] % power(_p,_r); }
+	std::vector<long int> to_vector() const { return std::vector<long int>(_val, _val + SIMD_SIZE); }
 	ZP clone() { return ZP(_val, _p, _r); }
 
 	ZP from_int(int i) const { return ZP(i); }
 	static ZP static_from_int(int i) { return ZP(i); }
 
+	static int simd_factor() { return SIMD_SIZE; }
 	static void set_global_p(long long p, long long r = 1) { _prev_p = p; _prev_r = r; }
 	static int global_p() { return _prev_p; }
 	static int get_global_ring_size() { return power(_prev_p, _prev_r); }
@@ -70,12 +73,18 @@ public:
 		return *this;
 	}
 
-	long long v() const { return _val; }
-
-	void shift_right() {
+	void divide_by_p() {
 		assert(_r > 1);
 		for (int i = 0; i < SIMD_SIZE; ++i)
 			_val[i] /= _p;
+	}
+
+	ZP rotate_left(int step) const {
+		ZP ret(*this);
+
+		for (int i = 0; i < SIMD_SIZE; ++i)
+			ret._val[i] = _val[(i + step) % SIMD_SIZE];
+		return ret;
 	}
 
 	ZP operator-() const {

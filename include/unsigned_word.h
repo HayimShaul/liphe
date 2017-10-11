@@ -25,7 +25,10 @@ private:
 
 	Bit biggerBiggerEqual(const UnsignedWord<MAX_BIT_NUM, Bit> &w, bool isBiggerEqual) const;
 public:
+	static int simd_factor() { return Bit::simd_factor(); }
+
 	UnsignedWord(int n = 0);
+	UnsignedWord(std::vector<int> n);
 	UnsignedWord(const Bit &b);
 	UnsignedWord(const UnsignedWord &u) : _bits(u._bits.size()) {
 		for (int i = 0; i < bitLength(); ++i) {
@@ -110,6 +113,8 @@ public:
 
 	int size() const { return _bits.size(); }
 	void set_bit(int i, const Bit &b) {
+		assert(i < MAX_BIT_NUM);
+		assert(i >= 0);
 		if (_bits[i] != NULL)
 			delete _bits[i];
 		_bits[i] = new Bit(b);
@@ -156,6 +161,32 @@ inline UnsignedWord<MAX_BIT_NUM, Bit>::UnsignedWord(int n) {
 		_bits.push_back(new Bit(n & 1));
 		n >>= 1;
 	}
+	assert(n == 0);
+}
+
+template<int MAX_BIT_NUM, class Bit>
+inline UnsignedWord<MAX_BIT_NUM, Bit>::UnsignedWord(std::vector<int> n) {
+
+	std::function<bool()> is_all_zero = [&n]()->bool {
+		for (auto i = n.begin(); i != n.end(); ++i)
+			if (*i != 0)
+				return false;
+		return true;
+	};
+
+	while ((_bits.size() < MAX_BIT_NUM) && (!is_all_zero())) {
+		std::vector<long int> bit(n.size());
+		for (unsigned int i = 0; i < n.size(); ++i)
+			bit[i] = n[i] & 1;
+
+		_bits.push_back(new Bit(bit));
+
+		for (auto i = n.begin(); i != n.end(); ++i)
+			*i >>= 1;
+	}
+
+	for (auto i = n.begin(); i != n.end(); ++i)
+		assert(*i == 0);
 }
 
 template<int MAX_BIT_NUM, class Bit>

@@ -21,6 +21,7 @@ private:
 	int _m;
 	int _n;
 	int _c;
+	int _max_sample;
 
 	std::function<int(int)> f_m;
 
@@ -35,15 +36,17 @@ private:
 
 public:
 //	AverageLiphe(int n) : _m(n), _n(n), _avg(BinomialTournament<OutNumber>::add), _c(1), _max_cost(1), _generator(clock()), _distribution(0, n) {}
-	AverageLiphe(int n) : _m(n), _n(n), _c(1), _avg(BinomialTournament<OutNumber>::add), _max_cost(1), _generator(1), _distribution(0, n) {}
+	AverageLiphe(int n) : _m(n), _n(n), _c(1), _max_sample(0), _avg(BinomialTournament<OutNumber>::add), _max_cost(1), _generator(1), _distribution(0, n)  {}
 //	AverageLiphe(int n, CostFunction *c) : _n(n), _avg(BinomialTournament<OutNumber>::add), _cost(c) {}
 
 	void set_resample_constant(int r) { _c = r; }
 	void set_m(int m) { _m = m; _distribution = std::uniform_int_distribution<int>(0, m); }
 	void set_max_cost(int c) { _max_cost = c; }
+	void set_max_sample(int c) { _max_sample = c; }
 	void set_f_m(const std::function<int(int)> &f) { f_m = f; }
 
-	void compute_resample_constant(float delta, float epsilon, int max_sample) {
+	void compute_resample_constant(float delta, float epsilon) {
+		assert(_max_sample > 0);
 		_c = 1;
 
 		// make sure [cm]/sample < 1
@@ -51,9 +54,9 @@ public:
 //			for (int m_i = 0; i <= _m; ++i)
 //				_c = std::max(_c, ceiling( (float) max_sample / f_m(m_i) ) );
 			// assume f_m is monotonously increasing
-			_c = std::max(_c, ceiling( (float) max_sample / f_m(_m) ) );
+			_c = std::max(_c, ceiling( (float) _max_sample / f_m(_m) ) );
 		} else {
-			_c = std::max(_c, ceiling( (float) max_sample / _m ) );
+			_c = std::max(_c, ceiling( (float) _max_sample / _m ) );
 		}
 
 //		// convert between Pr(...>delta) < eps    to   Pr(...>delta) < 2^-eps
@@ -68,7 +71,6 @@ public:
 
 	void add(const InNumber &x) {
 		for (int i = 0; i < _c; ++i) {
-//			int a_i = random() % (_m * _c);
 			int a_i = _distribution(_generator);
 			if ((bool) f_m)
 				a_i = f_m(a_i);
@@ -76,15 +78,32 @@ public:
 			// the case of a_i=0 is not interesting to compare to because when x_i = a_i = 0 it is not
 			// going to contribute to the average anyway
 
-//std::cerr << "comparing   x_i > a_1 = " << (x.to_int()) << " > " << a_i << std::endl;
-//std::cerr << "result = " << (CompareIn(*i) > a_i) << std::endl;
 			OutNumber addon = Convert::convert(CompareIn(x) > a_i);
-//std::cerr << "addon = " << addon << std::endl;
 
-//int a = addon.to_int();
-//std::cerr << " adding  " << a << std::endl;
+			_avg.add_to_tournament( addon );
+		}
+	}
 
-//		assert(_cost == NULL);
+	void add_simd(const InNumber &x) {
+		for (int i = 0; i < _c; ++i) {
+			std::vector<int> a_i(x.simd_factor());
+
+			for (unsigned int simd_i = 0; simd_i < a_i.size(); ++simd_i) {
+				a_i[simd_i] = _distribution(_generator);
+				if ((bool) f_m)
+					a_i[simd_i] = f_m(a_i[simd_i]);
+				if ((_max_sample > 0) && (a_i[simd_i] > _max_sample)) {
+					a_i[simd_i] = _max_sample + 1;
+				}
+			}
+
+			InNumber encAi(a_i);
+
+			// the case of a_i=0 is not interesting to compare to because when x_i = a_i = 0 it is not
+			// going to contribute to the average anyway
+
+			OutNumber addon = Convert::convert(CompareIn(x) > encAi);
+
 			_avg.add_to_tournament( addon );
 		}
 	}

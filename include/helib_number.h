@@ -53,6 +53,7 @@ public:
 	int in_range(int a) const { while (a < 0) a += _keys->p(); return a % _keys->p(); }
 	static int static_in_range(int a) { while (a < 0) a += _prev_keys->p(); return a % _prev_keys->p(); }
 	int to_int() const { return _keys->decrypt(_val); }
+	std::vector<long int> to_vector() const { std::vector<long int> ret; _keys->decrypt(ret, _val); return ret; }
 	HelibNumber from_int(int i) const {
 			HelibNumber ret;
 			_keys->encrypt(ret._val, i);
@@ -65,6 +66,7 @@ public:
 			return ret;
 		}
 
+	static int simd_factor() { return _prev_keys->simd_factor(); }
 	int get_ring_size() const { return power(_keys->p(), _keys->r()); }
 	int p() const { return _keys->p(); }
 	int r() const { return _keys->r(); }
@@ -182,6 +184,12 @@ std::cout << "bit = " << bit.to_int() << std::endl;
 			}
 		}
 
+		return ret;
+	}
+
+	HelibNumber rotate_left(int step) {
+		HelibNumber ret(*this);
+		ret.rotate_left(step);
 		return ret;
 	}
 
