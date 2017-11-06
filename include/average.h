@@ -4,9 +4,11 @@
 #include <math.h>
 #include <vector>
 #include <random>
+#include <mutex>
 
 #include <print.h>
 #include "binomial_tournament.h"
+#include "thread_pool.h"
 
 
 
@@ -26,7 +28,6 @@ private:
 	std::function<int(int)> f_m;
 
 	BinomialTournament<OutNumber> _avg;
-	int _max_cost;
 //	CostFunction *_out_cost;
 
 	std::default_random_engine _generator;
@@ -35,17 +36,20 @@ private:
 	int ceiling(float f) { return (int)(f+0.9999999); }
 
 public:
-//	AverageLiphe(int n) : _m(n), _n(n), _avg(BinomialTournament<OutNumber>::add), _c(1), _max_cost(1), _generator(clock()), _distribution(0, n) {}
-	AverageLiphe(int n) : _m(n), _n(n), _c(1), _max_sample(0), _avg(BinomialTournament<OutNumber>::add), _max_cost(1), _generator(1), _distribution(0, n)  {}
-//	AverageLiphe(int n, CostFunction *c) : _n(n), _avg(BinomialTournament<OutNumber>::add), _cost(c) {}
+	AverageLiphe(int n = 0) : _m(n), _n(n), _c(1), _max_sample(0), _avg(BinomialTournament<OutNumber>::add), _generator(clock()), _distribution(0, n)  {}
 
+	void set_n(int n) {
+		_n = n;
+		if (_m <= 0)
+			_m = n;
+		_distribution = std::uniform_int_distribution<int>(0, n);
+	}
 	void set_resample_constant(int r) { _c = r; }
 	void set_m(int m) { _m = m; _distribution = std::uniform_int_distribution<int>(0, m); }
-	void set_max_cost(int c) { _max_cost = c; }
 	void set_max_sample(int c) { _max_sample = c; }
-	void set_f_m(const std::function<int(int)> &f) { f_m = f; }
+	void set_f_m(const std::function<int(int)> &f) { f_m = f; compute_resample_constant(); }
 
-	void compute_resample_constant(float delta, float epsilon) {
+	void compute_resample_constant() {
 		assert(_max_sample > 0);
 		_c = 1;
 
@@ -58,11 +62,6 @@ public:
 		} else {
 			_c = std::max(_c, ceiling( (float) _max_sample / _m ) );
 		}
-
-//		// convert between Pr(...>delta) < eps    to   Pr(...>delta) < 2^-eps
-//		epsilon = - log(epsilon) / log(2);
-//		// make sure pr(..>delta) < eps
-//		_c = std::max(_c, ceiling( (float) _max_cost * epsilon / (delta * delta * 2 * _n)));
 
 		_distribution = std::uniform_int_distribution<int>(0, _c * _m); 
 
@@ -84,27 +83,43 @@ public:
 		}
 	}
 
-	void add_simd(const InNumber &x) {
-		for (int i = 0; i < _c; ++i) {
-			std::vector<int> a_i(x.simd_factor());
+	void add_simd(std::shared_ptr<InNumber> x, std::mutex *mutex = NULL, ThreadPool *threads = NULL) {
 
+		std::function<void(void)> one_pass = [x, threads, mutex, this](){
+			std::vector<int> a_i(x.get()->simd_factor());
+
+			if (mutex != NULL)
+				mutex->lock();
 			for (unsigned int simd_i = 0; simd_i < a_i.size(); ++simd_i) {
 				a_i[simd_i] = _distribution(_generator);
 				if ((bool) f_m)
-					a_i[simd_i] = f_m(a_i[simd_i]);
+				a_i[simd_i] = f_m(a_i[simd_i]);
 				if ((_max_sample > 0) && (a_i[simd_i] > _max_sample)) {
 					a_i[simd_i] = _max_sample + 1;
 				}
 			}
+			if (mutex != NULL)
+				mutex->unlock();
 
 			InNumber encAi(a_i);
 
 			// the case of a_i=0 is not interesting to compare to because when x_i = a_i = 0 it is not
 			// going to contribute to the average anyway
 
-			OutNumber addon = Convert::convert(CompareIn(x) > encAi);
+			OutNumber addon = Convert::convert(CompareIn(*(x.get())) > encAi);
 
+			if (mutex != NULL)
+				mutex->lock();
 			_avg.add_to_tournament( addon );
+			if (mutex != NULL)
+				mutex->unlock();
+		};
+
+		for (int i = 0; i < _c; ++i) {
+			if (threads != NULL)
+				threads->submit_job(one_pass);
+			else
+				one_pass();
 		}
 	}
 
@@ -140,6 +155,7 @@ public:
 
 
 
+#if 0
 
 // InNumber is usually the bit-wise reprsenation of xi
 // OutNumber is a native number in Zp
@@ -148,7 +164,6 @@ template<class UnsignedWord, class OutNumber, class InNumber, class CompareIn, c
 class AverageLipheBits {
 	int _n;
 	int _m;
-	int _max_cost;
 	int _max_sample;
 	float _delta;
 	float _epsilon;
@@ -165,22 +180,19 @@ class AverageLipheBits {
 
 	void apply_constants() {
 		for (int i = 0; i < _bits.size(); ++i) {
-			_bits[i]->set_max_cost(_max_cost);
-
-//			_bits[i]->set_m(_m * (1 << i));
 			_bits[i]->set_m(_m);
+			_bits[i]->set_max_sample(_max_sample);
 
-			if ((_delta > 0) && (_epsilon > 0) && (_max_sample > 0))
-				_bits[i]->compute_resample_constant(_delta, _epsilon, _max_sample);
+			_bits[i]->compute_resample_constant();
 		}
 	}
 
 public:
-	AverageLipheBits(int n) : _n(n), _m(n), _max_cost(1), _max_sample(0), _delta(0), _epsilon(0)  {}
+	AverageLipheBits(int n) : _n(n), _m(n),  _max_sample(0), _delta(0), _epsilon(0)  {}
 	~AverageLipheBits() { clean(); }
 
 	void set_m(int m) { _m = m; apply_constants(); }
-	void set_max_cost(int m) { _max_cost = m; apply_constants(); }
+	void set_max_sample(int m) { _max_sample = m; apply_constants(); }
 
 	void compute_resample_constant(float delta, float epsilon, int max_sample) {
 		_delta = delta;
@@ -244,6 +256,8 @@ public:
 		return ret;
 	}
 };
+
+#endif
 
 
 

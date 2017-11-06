@@ -25,7 +25,7 @@ private:
 
 	Bit biggerBiggerEqual(const UnsignedWord<MAX_BIT_NUM, Bit> &w, bool isBiggerEqual) const;
 public:
-	static int simd_factor() { return Bit::simd_factor(); }
+	static unsigned int simd_factor() { return Bit::simd_factor(); }
 
 	UnsignedWord(int n = 0);
 	UnsignedWord(std::vector<int> n);
@@ -83,6 +83,22 @@ public:
 	UnsignedWord<MAX_BIT_NUM, Bit> operator*(const Bit &b) const;
 	UnsignedWord<MAX_BIT_NUM, Bit> operator<<(int i) const { UnsignedWord<MAX_BIT_NUM, Bit> c(*this); c<<=i; return c; }
 	UnsignedWord<MAX_BIT_NUM, Bit> operator>>(int i) const { UnsignedWord<MAX_BIT_NUM, Bit> c(*this); c>>=i; return c; }
+
+	UnsignedWord<MAX_BIT_NUM, Bit> &operator=(const UnsignedWord<MAX_BIT_NUM, Bit> &u) {
+		if (this == &u)
+			return *this;
+
+		for (int i = 0; i < _bits.length(); ++i) {
+			if (_bits[i] != NULL) {
+				delete _bits[i];
+				_bits[i] = NULL;
+			}
+
+			if (u._bits[i] != NULL) {
+				_bits[i] = new Bit(_bits[i]);
+			}
+		}
+	}
 
 	Bit operator==(const UnsignedWord<MAX_BIT_NUM, Bit> &b) const;
 
@@ -146,11 +162,56 @@ public:
 		return ret;
 	}
 
-//	std::ostream &operator<<(std::ostream &out);
+	template<int S, class B>
+	friend std::ostream &operator<<(std::ostream &out, const UnsignedWord<S,B> &z);
+	template<int S, class B>
+	friend std::istream &operator>>(std::istream &in, UnsignedWord<S,B> &z);
 
 	static int static_in_range(int a) { return a & (((unsigned int)-1) >> (32 - MAX_BIT_NUM)); }
 	static int max_bit_num() { return MAX_BIT_NUM; }
 };
+
+
+
+
+template<int Size, class Bit>
+inline std::ostream &operator<<(std::ostream &out, const UnsignedWord<Size, Bit> &z) {
+	out << z._bits.size() << " ";
+
+	for (unsigned int i = 0; i < z._bits.size(); ++i) {
+		if (z._bits[i] != NULL) {
+			out << "Y " << *(z._bits[i]);
+		} else {
+			out << "N ";
+		}
+	}
+
+	return out;
+}
+
+template<int Size, class Bit>
+inline std::istream &operator>>(std::istream &in, UnsignedWord<Size, Bit> &z) {
+	int size;
+	char c;
+
+	in >> size;
+	z.set_bit_length(size);
+
+	for (unsigned int i = 0; i < z._bits.size(); ++i) {
+		in >> c;
+		if (c != 'N') {
+			z._bits[i] = new Bit;
+			in >> *(z._bits[i]);
+		} else {
+			if (z._bits[i] != NULL)
+				delete z._bits[i];
+			z._bits[i] = NULL;
+		}
+	}
+
+	return in;
+}
+
 
 // implementation
 

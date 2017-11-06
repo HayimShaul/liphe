@@ -39,14 +39,16 @@ private:
 		}
 	}
 
+//	void print(const char *s) { std::cerr << s << " HELIB " << (&_val) << std::endl; }
+	void print(const char *s) {}
 public:
-	HelibNumber() : _keys(_prev_keys), _val(_prev_keys->publicKey()), _mul_depth(0), _add_depth(0) {}
-	HelibNumber(long long v) : _keys(_prev_keys), _val(_keys->publicKey()), _mul_depth(0), _add_depth(0) { _keys->encrypt(_val, v); }
-	HelibNumber(const std::vector<long> &v) : _keys(_prev_keys), _val(_keys->publicKey()), _mul_depth(0), _add_depth(0) { _keys->encrypt(_val, v); }
-	HelibNumber(const HelibNumber &n) : _keys(n._keys), _val(n._val), _mul_depth(n._mul_depth), _add_depth(n._add_depth) {}
-	HelibNumber(const Ctxt &n) : _keys(_prev_keys), _val(n), _mul_depth(0), _add_depth(0) {}
+	HelibNumber() : _keys(_prev_keys), _val(_prev_keys->publicKey()), _mul_depth(0), _add_depth(0) { print("allocating"); }
+	HelibNumber(long long v) : _keys(_prev_keys), _val(_keys->publicKey()), _mul_depth(0), _add_depth(0) { _keys->encrypt(_val, v); print("allocating"); }
+	HelibNumber(const std::vector<long> &v) : _keys(_prev_keys), _val(_keys->publicKey()), _mul_depth(0), _add_depth(0) { _keys->encrypt(_val, v); print("allocating"); }
+	HelibNumber(const HelibNumber &n) : _keys(n._keys), _val(n._val), _mul_depth(n._mul_depth), _add_depth(n._add_depth) {print("allocating"); }
+	HelibNumber(const Ctxt &n) : _keys(_prev_keys), _val(n), _mul_depth(0), _add_depth(0) {print("allocating"); }
 
-	~HelibNumber() {}
+	~HelibNumber() {print("deleting"); }
 
 	static int global_p() { return _prev_keys->p(); }
 	static void set_global_keys(HelibKeys *k) { _prev_keys = k; }
@@ -66,7 +68,7 @@ public:
 			return ret;
 		}
 
-	static int simd_factor() { return _prev_keys->simd_factor(); }
+	static unsigned int simd_factor() { return _prev_keys->simd_factor(); }
 	int get_ring_size() const { return power(_keys->p(), _keys->r()); }
 	int p() const { return _keys->p(); }
 	int r() const { return _keys->r(); }
@@ -189,13 +191,38 @@ std::cout << "bit = " << bit.to_int() << std::endl;
 
 	HelibNumber rotate_left(int step) {
 		HelibNumber ret(*this);
-		ret.rotate_left(step);
+		_keys->rotate(ret._val, step);
 		return ret;
 	}
 
 	void reduceNoiseLevel() {
 		_val.modDownToLevel(_val.findBaseLevel());
 	}
+
+	friend std::ostream &operator<<(std::ostream &out, const HelibNumber &z);
+	friend std::istream &operator>>(std::istream &in, HelibNumber &z);
 };
+
+inline std::ostream &operator<<(std::ostream &out, const HelibNumber &z) {
+	out << z._val << " ";
+
+	out
+		<< z._mul_depth << " "
+		<< z._add_depth << " ";
+
+	return out;
+}
+
+inline std::istream &operator>>(std::istream &in, HelibNumber &z) {
+	char c;
+
+	in >> z._val >> c;
+
+	in
+		>> z._mul_depth >> c
+		>> z._add_depth >> c;
+
+	return in;
+}
 
 #endif

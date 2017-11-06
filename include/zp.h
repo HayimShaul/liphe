@@ -3,6 +3,8 @@
 
 #include <assert.h>
 #include <algorithm>
+#include <istream>
+#include <ostream>
 
 #include <stdio.h>
 
@@ -49,7 +51,7 @@ public:
 	ZP from_int(int i) const { return ZP(i); }
 	static ZP static_from_int(int i) { return ZP(i); }
 
-	static int simd_factor() { return SIMD_SIZE; }
+	static unsigned int simd_factor() { return SIMD_SIZE; }
 	static void set_global_p(long long p, long long r = 1) { _prev_p = p; _prev_r = r; }
 	static int global_p() { return _prev_p; }
 	static int get_global_ring_size() { return power(_prev_p, _prev_r); }
@@ -166,6 +168,13 @@ public:
 //	bool operator!=(const ZP &z) const { assert(_p == z._p); return _val[0] != z._val[0]; }
 
 	void reduceNoiseLevel() {}
+
+
+	template<int A>
+	friend std::ostream &operator<<(std::ostream &out, const ZP<A> &z);
+
+	template<int A>
+	friend std::istream &operator>>(std::istream &out, ZP<A> &z);
 };
 
 template<int SIMD_SIZE>
@@ -175,5 +184,41 @@ template<int SIMD_SIZE>
 long long ZP<SIMD_SIZE>::_prev_r = 1;
 
 
+template<int SIMD_SIZE>
+inline std::ostream &operator<<(std::ostream &out, const ZP<SIMD_SIZE> &z) {
+
+	out
+		<< z._p << " "
+		<< z._r << " ";
+
+	out << SIMD_SIZE << " ";
+	for (int i = 0; i < SIMD_SIZE; ++i)
+		out << z._val[i] << " ";
+
+	out
+		<< z._mul_depth << " "
+		<< z._add_depth << " ";
+
+	return out;
+}
+
+template<int SIMD_SIZE>
+inline std::istream &operator>>(std::istream &in, ZP<SIMD_SIZE> &z) {
+	in
+		>> z._p
+		>> z._r;
+
+	int simd_size;
+	in >> simd_size;
+	assert(simd_size == SIMD_SIZE);
+	for (int i = 0; i < SIMD_SIZE; ++i)
+		in >> z._val[i];
+
+	in
+		>> z._mul_depth
+		>> z._add_depth;
+
+	return in;
+}
 
 #endif

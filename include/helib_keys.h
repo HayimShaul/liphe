@@ -46,6 +46,8 @@ public:
 	void read_from_file(std::istream& s);
 
 	void print(const Ctxt &b);
+
+	void rotate(Ctxt &a, int step) { _ea->rotate(a, step); }
 };
 
 #endif
