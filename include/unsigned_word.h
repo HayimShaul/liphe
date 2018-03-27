@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <bitset>
 #include <vector>
+#include <functional>
 
 #include "binomial_tournament.h"
 
@@ -88,16 +89,17 @@ public:
 		if (this == &u)
 			return *this;
 
-		for (int i = 0; i < _bits.length(); ++i) {
+		for (unsigned int i = 0; i < _bits.size(); ++i) {
 			if (_bits[i] != NULL) {
 				delete _bits[i];
 				_bits[i] = NULL;
 			}
 
 			if (u._bits[i] != NULL) {
-				_bits[i] = new Bit(_bits[i]);
+				_bits[i] = new Bit(*(u._bits[i]));
 			}
 		}
+		return *this;
 	}
 
 	Bit operator==(const UnsignedWord<MAX_BIT_NUM, Bit> &b) const;
@@ -262,6 +264,9 @@ inline void UnsignedWord<MAX_BIT_NUM, Bit>::operator+=(const UnsignedWord<MAX_BI
 
 	int i;
 	Bit carry(0);
+
+	// TODO: assumes p=2
+	// specifically: a+b is assumed to be xor
 
 	UnsignedWord<MAX_BIT_NUM, Bit> &bits = *this;
 

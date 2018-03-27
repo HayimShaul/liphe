@@ -5,6 +5,7 @@
 #include <string.h>
 #include <algorithm>
 
+#include <NTL/ZZ_p.h>
 #include <NTL/ZZ_pX.h>
 
 #include "binomial_tournament.h"
@@ -338,8 +339,8 @@ std::cerr << "computing power of " << p << std::endl;
 
 
 
-	static inline const ZZ_pX poly_mul(const ZZ_pX &p1, const ZZ_pX &p2, int mod) {
-		ZZ_pX ret = p1 * p2;
+	static inline const NTL::ZZ_pX poly_mul(const NTL::ZZ_pX &p1, const NTL::ZZ_pX &p2, int mod) {
+		NTL::ZZ_pX ret = p1 * p2;
 
 		int phi_mod = phi(mod);
 		for (int i = mod; i <= NTL::deg(ret); ++i) {
@@ -353,7 +354,9 @@ std::cerr << "computing power of " << p << std::endl;
 		return ret;
 	}
 
-	static inline const ZZ_pX poly_power(const ZZ_pX &poly, int e, int mod) {
+	static inline const NTL::ZZ_pX poly_power(const NTL::ZZ_pX &poly, int e, int mod) {
+		assert(e > 0);
+
 		if (e == 1)
 			return poly;
 
@@ -365,13 +368,13 @@ std::cerr << "computing power of " << p << std::endl;
 
 
 	// return the polynomial (x-y)
-	static ZZ_pX x_(int y) { return ZZ_pX(INIT_MONO, 0, -y) + ZZ_pX(INIT_MONO, 1, 1); }
+	static NTL::ZZ_pX x_(int y) { return NTL::ZZ_pX(NTL::INIT_MONO, 0, -y) + NTL::ZZ_pX(NTL::INIT_MONO, 1, 1); }
 
 
 	static Polynomial<Number> build_polynomial(int p, int range, const std::function<int(int)> &func) {
 		NTL::ZZ_p::init(NTL::ZZ(p));
 
-		ZZ_pX poly(INIT_MONO, 0, 0);
+		NTL::ZZ_pX poly(NTL::INIT_MONO, 0, 0);
 
 		int phi_p = phi(p);
 
@@ -383,7 +386,7 @@ std::cerr << "computing power of " << p << std::endl;
 
 			int y = func(x);
 
-			ZZ_pX ind(INIT_MONO, 0, 1);
+			NTL::ZZ_pX ind(NTL::INIT_MONO, 0, 1);
 //std::cout << ind << std::endl;
 
 			while ((x < range) && ((func(x) == y) || (func(x) == 0))) {
@@ -398,10 +401,10 @@ std::cerr << "computing power of " << p << std::endl;
 			ind = poly_power(ind, phi_p, p);
 			// now ind is an inverse indicator getting 0 for x iff func(x)=y, 1 otherwise
 
-			ind = ZZ_pX(INIT_MONO, 0, 1) - ind;
+			ind = NTL::ZZ_pX(NTL::INIT_MONO, 0, 1) - ind;
 			// now ind is an inverse indicator getting 1 for x iff func(x)=y, 0 otherwise
 
-			poly += poly_mul(ind, ZZ_pX(INIT_MONO, 0, y), p);
+			poly += poly_mul(ind, NTL::ZZ_pX(NTL::INIT_MONO, 0, y), p);
 //std::cout << "poly = " << poly << std::endl;
 
 		}
@@ -420,6 +423,37 @@ std::cerr << "computing power of " << p << std::endl;
 		return ret;
 	}
 
+<<<<<<< HEAD
+=======
+	template<class SourceIterator>
+	static Polynomial<Number> build_polynomial_with_small_source(int p, const SourceIterator &imageBegin, const SourceIterator &imageEnd, const std::function<int(int)> &func) {
+		NTL::ZZ_p::init(NTL::ZZ(p));
+
+		NTL::ZZ_pX poly(NTL::INIT_MONO, 0, 0);
+
+		int phi_p = phi(p);
+
+		for (SourceIterator img = imageBegin; img != imageEnd; ++img) {
+			NTL::ZZ_pX monomial(NTL::INIT_MONO, 0, 1);
+			NTL::ZZ_pX coefficient(NTL::INIT_MONO, 0, 1);
+			for (SourceIterator x = imageBegin; x != imageEnd; ++x) {
+				monomial = poly_mul(monomial, x_(*x), p);
+				coefficient = poly_mul(coefficient, NTL::ZZ_pX(NTL::INIT_MONO, 0, func(*img) - (*x)), p);
+			}
+			coefficient = poly_power(coefficient, phi_p - 1, p);
+
+			poly += monomial*coefficient;
+		}
+
+		std::vector<int> coef(NTL::deg(poly) + 1);
+		for (int i = 0; i < NTL::deg(poly)+1; ++i)
+			conv(coef[i], poly[i]);
+
+		Polynomial<Number> ret = Polynomial(coef, p);
+		return ret;
+	}
+
+>>>>>>> cb07143dc2074f45229401400ac05163ffe25425
 
 };
 
