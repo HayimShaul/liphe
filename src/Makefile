@@ -1,15 +1,15 @@
-CCFLAGS = -g
+CCFLAGS = -g --std=c++11 -Wall
 
-NTLINCDIR = -I/home/hayim/academic/fhe/ntl-9.6.2/include
-NTLLIBDIR = -L/home/hayim/academic/fhe/ntl-9.6.2/src
+NTLINCDIR = -I../../ntl-10.5.0/include
+NTLLIBDIR = -L../../ntl-10.5.0/src
 
-FHEINCDIR = -I/home/hayim/academic/fhe/HElib-master/src
-FHELIBDIR = -L/home/hayim/academic/fhe/HElib-master/src
+FHEINCDIR = -I../../HElib/src
+FHELIBDIR = -L../../HElib/src
 
 HEADSUPINCDIR = -I../include
 INCS = $(NTLINCDIR) $(FHEINCDIR) $(HEADSUPINCDIR)
 
-OBJ = helib_keys.o helib_number.o primes.o
+OBJ = helib_keys.o helib_number.o primes.o thread_pool.o
 
 libliphe.a: $(OBJ)
 	ar rUv libliphe.a $(OBJ)

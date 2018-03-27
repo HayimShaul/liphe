@@ -25,10 +25,27 @@ private:
 
 	Bit biggerBiggerEqual(const UnsignedWord<MAX_BIT_NUM, Bit> &w, bool isBiggerEqual) const;
 public:
+	static unsigned int simd_factor() { return Bit::simd_factor(); }
+
 	UnsignedWord(int n = 0);
+	UnsignedWord(std::vector<long int> n);
 	UnsignedWord(const Bit &b);
+	UnsignedWord(const UnsignedWord &u) : _bits(u._bits.size()) {
+		for (int i = 0; i < bitLength(); ++i) {
+			if (u._bits[i] != NULL)
+				_bits[i] = new Bit(u[i]);
+			else
+				_bits[i] = NULL;
+		}
+	}
 
 	~UnsignedWord() {
+		for (int i = 0; i < bitLength(); ++i) {
+			if (_bits[i] != NULL) {
+				delete _bits[i];
+				_bits[i] = NULL;
+			}
+		}
 	}
 
 	UnsignedWord<MAX_BIT_NUM, Bit> from_int(int c) {
@@ -67,6 +84,22 @@ public:
 	UnsignedWord<MAX_BIT_NUM, Bit> operator<<(int i) const { UnsignedWord<MAX_BIT_NUM, Bit> c(*this); c<<=i; return c; }
 	UnsignedWord<MAX_BIT_NUM, Bit> operator>>(int i) const { UnsignedWord<MAX_BIT_NUM, Bit> c(*this); c>>=i; return c; }
 
+	UnsignedWord<MAX_BIT_NUM, Bit> &operator=(const UnsignedWord<MAX_BIT_NUM, Bit> &u) {
+		if (this == &u)
+			return *this;
+
+		for (int i = 0; i < _bits.length(); ++i) {
+			if (_bits[i] != NULL) {
+				delete _bits[i];
+				_bits[i] = NULL;
+			}
+
+			if (u._bits[i] != NULL) {
+				_bits[i] = new Bit(_bits[i]);
+			}
+		}
+	}
+
 	Bit operator==(const UnsignedWord<MAX_BIT_NUM, Bit> &b) const;
 
 	Bit operator>(const UnsignedWord<MAX_BIT_NUM, Bit> &b) const { return biggerBiggerEqual(b, false); }
@@ -79,7 +112,8 @@ public:
 	Bit operator<(const int &b) const;
 	Bit operator>(const int &b) const;
 
-	void setBitLength(int len) {
+	int bitLength() const { return _bits.size(); }
+	void set_bit_length(int len) {
 		int oldLen = bitLength();
 
 		if (len < bitLength()) {
@@ -93,10 +127,14 @@ public:
 			_bits[i] = NULL;
 	}
 
-	int bitLength() const { return _bits.size(); }
 	int size() const { return _bits.size(); }
-	void set_bit_length(int l) { _bits.resize(l); }
-	void set_bit(int i, const Bit &b) { _bits[i] = new Bit(b); }
+	void set_bit(int i, const Bit &b) {
+		assert(i < MAX_BIT_NUM);
+		assert(i >= 0);
+		if (_bits[i] != NULL)
+			delete _bits[i];
+		_bits[i] = new Bit(b);
+	}
 	unsigned long to_int() const;
 
 	Bit bits_to_number() const {
@@ -107,7 +145,7 @@ public:
 		Bit ret = (*this)[bitLength() - 1];
 
 		for (int i = bitLength() - 2; i >= 0; --i) {
-			ret *= 2;
+			ret += ret;
 			ret += (*this)[i];
 		}
 
@@ -124,11 +162,56 @@ public:
 		return ret;
 	}
 
-//	std::ostream &operator<<(std::ostream &out);
+	template<int S, class B>
+	friend std::ostream &operator<<(std::ostream &out, const UnsignedWord<S,B> &z);
+	template<int S, class B>
+	friend std::istream &operator>>(std::istream &in, UnsignedWord<S,B> &z);
 
 	static int static_in_range(int a) { return a & (((unsigned int)-1) >> (32 - MAX_BIT_NUM)); }
 	static int max_bit_num() { return MAX_BIT_NUM; }
 };
+
+
+
+
+template<int Size, class Bit>
+inline std::ostream &operator<<(std::ostream &out, const UnsignedWord<Size, Bit> &z) {
+	out << z._bits.size() << " ";
+
+	for (unsigned int i = 0; i < z._bits.size(); ++i) {
+		if (z._bits[i] != NULL) {
+			out << "Y " << *(z._bits[i]);
+		} else {
+			out << "N ";
+		}
+	}
+
+	return out;
+}
+
+template<int Size, class Bit>
+inline std::istream &operator>>(std::istream &in, UnsignedWord<Size, Bit> &z) {
+	int size;
+	char c;
+
+	in >> size;
+	z.set_bit_length(size);
+
+	for (unsigned int i = 0; i < z._bits.size(); ++i) {
+		in >> c;
+		if (c != 'N') {
+			z._bits[i] = new Bit;
+			in >> *(z._bits[i]);
+		} else {
+			if (z._bits[i] != NULL)
+				delete z._bits[i];
+			z._bits[i] = NULL;
+		}
+	}
+
+	return in;
+}
+
 
 // implementation
 
@@ -139,6 +222,32 @@ inline UnsignedWord<MAX_BIT_NUM, Bit>::UnsignedWord(int n) {
 		_bits.push_back(new Bit(n & 1));
 		n >>= 1;
 	}
+	assert(n == 0);
+}
+
+template<int MAX_BIT_NUM, class Bit>
+inline UnsignedWord<MAX_BIT_NUM, Bit>::UnsignedWord(std::vector<long int> n) {
+
+	std::function<bool()> is_all_zero = [&n]()->bool {
+		for (auto i = n.begin(); i != n.end(); ++i)
+			if (*i != 0)
+				return false;
+		return true;
+	};
+
+	while ((_bits.size() < MAX_BIT_NUM) && (!is_all_zero())) {
+		std::vector<long int> bit(n.size());
+		for (unsigned int i = 0; i < n.size(); ++i)
+			bit[i] = n[i] & 1;
+
+		_bits.push_back(new Bit(bit));
+
+		for (auto i = n.begin(); i != n.end(); ++i)
+			*i >>= 1;
+	}
+
+	for (auto i = n.begin(); i != n.end(); ++i)
+		assert(*i == 0);
 }
 
 template<int MAX_BIT_NUM, class Bit>
@@ -211,27 +320,44 @@ inline void UnsignedWord<MAX_BIT_NUM, Bit>::operator-=(const UnsignedWord<MAX_BI
 template<int MAX_BIT_NUM, class Bit>
 void UnsignedWord<MAX_BIT_NUM, Bit>::operator>>=(int i) {
 	if (i >= bitLength()) {
-		setBitLength(1);
+		set_bit_length(1);
 		(*this)[0] = Bit(0);
 		return;
 	}
+	if (i == 0)
+		return;
+	assert(i > 0);
 
 	int j;
-	for (j = 0; j < bitLength() - i; ++j)
+	for (j = 0; j < bitLength() - i; ++j) {
+		if (_bits[j] != NULL)
+			delete _bits[j];
 		_bits[j] = _bits[j + i];
-	setBitLength(bitLength() - i);
+		_bits[j+i] = NULL;
+	}
+	set_bit_length(bitLength() - i);
 }
 
 template<int MAX_BIT_NUM, class Bit>
 void UnsignedWord<MAX_BIT_NUM, Bit>::operator<<=(int i) {
 	int j;
+	if (i == 0)
+		return;
+	assert(i > 0);
 
-	setBitLength(std::min(MAX_BIT_NUM, bitLength() + i));
+	set_bit_length(std::min(MAX_BIT_NUM, bitLength() + i));
 
-	for (j = bitLength() - 1; j >= i; --j)
+	for (j = bitLength() - 1; j >= i; --j) {
+		if (_bits[j] != NULL)
+			delete _bits[j];
 		_bits[j] = _bits[j - i];
-	for (j = i - 1; j >= 0; --j)
+		_bits[j - i] = NULL;
+	}
+	for (j = i - 1; j >= 0; --j) {
+		if (_bits[j] != NULL)
+			delete _bits[j];
 		_bits[j] = new Bit(0);
+	}
 }
 
 template<int MAX_BIT_NUM, class Bit>
@@ -265,7 +391,8 @@ template<int MAX_BIT_NUM, class Bit>
 unsigned long UnsignedWord<MAX_BIT_NUM, Bit>::to_int() const {
 	unsigned long r = 0;
 	for (int i = 0; i < bitLength(); ++i)
-		r += ((*this)[i].to_int()) << i;
+		if (_bits[i] != NULL)
+			r += (_bits[i]->to_int()) << i;
 	return r;
 }
 
@@ -328,12 +455,31 @@ Bit UnsignedWord<MAX_BIT_NUM, Bit>::operator>(const int &w) const {
 
 	return isLarger.unite_all();
 }
+
+template<int MAX_BIT_NUM, class Bit>
+Bit UnsignedWord<MAX_BIT_NUM, Bit>::operator==(const int &w) const {
+	// If we have the wrong number of bits we cant be equal
+	if ((1 << bitLength()) - 1 < w) {
+		return Bit(0);
+	}
+
+	// we know that bitLength() > wBitLength because previousl checked so
+
+	BinomialTournament<Bit> equalPrefix( BinomialTournament<Bit>::mul );
+	for (int i = bitLength() - 1; i >= 0; --i) {
+		if (get_bit(w, i) == 0) {
+			equalPrefix.add_to_tournament( Bit(1) - (*this)[i] );
+		} else {
+			equalPrefix.add_to_tournament( (*this)[i] );
+		}
+	}
+
+	return equalPrefix.unite_all();
+}
 #undef get_bit
 
 template<int MAX_BIT_NUM, class Bit>
 Bit UnsignedWord<MAX_BIT_NUM, Bit>::biggerBiggerEqual(const UnsignedWord<MAX_BIT_NUM, Bit> &w, bool isBiggerEqual) const {
-	int i;
-
 	if (bitLength() == 0)
 		return Bit(0);
 	if (w.bitLength() == 0)
@@ -342,7 +488,7 @@ Bit UnsignedWord<MAX_BIT_NUM, Bit>::biggerBiggerEqual(const UnsignedWord<MAX_BIT
 	BinomialTournament<Bit> samePrefix( BinomialTournament<Bit>::mul );
 	BinomialTournament<Bit> biggerThan( BinomialTournament<Bit>::add );
 
-	bool overZ2Field = ((*this)[0].p() == 2);
+	bool overZ2Field = ((*this)[0].get_ring_size() == 2);
 
 
 	// take care of the prefix of *this (i.e. pad w with 0)
@@ -356,7 +502,7 @@ Bit UnsignedWord<MAX_BIT_NUM, Bit>::biggerBiggerEqual(const UnsignedWord<MAX_BIT
 
 	// take care of the prefix of w (i.e. pad *this with 0)
 	if (w.bitLength() > bitLength()) {
-		for (int bit = w.bitLength() - 1; bit > bitLength(); --bit) {
+		for (int bit = w.bitLength() - 1; bit > bitLength() - 1; --bit) {
 			samePrefix.add_to_tournament( !w[bit] );
 		}
 	}
@@ -375,8 +521,10 @@ Bit UnsignedWord<MAX_BIT_NUM, Bit>::biggerBiggerEqual(const UnsignedWord<MAX_BIT
 
 		if ((bit > 0) || (isBiggerEqual)) {
 			Bit sameBit = (*this)[bit] + w[bit];
-			if (!overZ2Field)
+			if (!overZ2Field) {
 				sameBit -= m;
+				sameBit -= m;
+			}
 			sameBit = !sameBit;
 			samePrefix.add_to_tournament(sameBit);
 		}

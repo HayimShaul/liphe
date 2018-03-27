@@ -27,7 +27,8 @@ public:
 	long &p() { return _p; }
 	long &r() { return _r; }
 
-	int nslots() { return _ea->size(); }
+	int nslots() const { return _ea->size(); }
+	int simd_factor() const { return nslots(); }
 
 	FHEPubKey &publicKey() { return *_publicKey; }
 	EncryptedArray &ea() { return *_ea; }
@@ -45,6 +46,8 @@ public:
 	void read_from_file(std::istream& s);
 
 	void print(const Ctxt &b);
+
+	void rotate(Ctxt &a, int step) { _ea->rotate(a, step); }
 };
 
 #endif

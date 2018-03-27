@@ -231,7 +231,7 @@ long HelibKeys::decrypt(const Ctxt &b) {
 
 Ctxt HelibKeys::encrypt(const std::vector<int> &b) {
 	std::vector<long> _b(b.size());
-	for (int i = 0; i < b.size(); ++i)
+	for (unsigned int i = 0; i < b.size(); ++i)
 		_b[i] = b[i];
 	return encrypt(_b);
 }
@@ -246,7 +246,7 @@ Ctxt HelibKeys::encrypt(const std::vector<long> &b) {
 
 void HelibKeys::encrypt(Ctxt &r, const std::vector<int> &b) {
 	std::vector<long> _b(b.size());
-	for (int i = 0; i < b.size(); ++i)
+	for (unsigned int i = 0; i < b.size(); ++i)
 		_b[i] = b[i];
 	encrypt(r, _b);
 }
