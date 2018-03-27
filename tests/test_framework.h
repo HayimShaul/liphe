@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <time.h>
 
+#include <polynomial.h>
+
 #define skipDoTest(name, func, Number, data, iter, seed)                                                  \
 	std::cout << "Skipping test " << name << std::endl;
 
@@ -205,6 +207,36 @@ int_array[7] = 1;
 //	delete[] numbers;
 //	delete[] _nmbers
 //}
+
+
+template<class Number>
+inline bool test_polynomial(void *data) {
+	int ring_size = Number::global_p();
+
+	std::vector<int> squares;
+	squares.push_back(1);
+	squares.push_back(4);
+	squares.push_back(9);
+	squares.push_back(16);
+	squares.push_back(25);
+	squares.push_back(36);
+	squares.push_back(49);
+	squares.push_back(64);
+	squares.push_back(81);
+	Polynomial<Number> my_sqrt = Polynomial<Number>::build_polynomial_with_small_source(ring_size, squares.cbegin(), squares.cend(), [](int x)->int{return sqrt(x);});
+
+	for (int i = 0; i < 100; ++i) {
+		int s = sqrt(i);
+		Number iEnc(i);
+		Number sqrtEnc = my_sqrt.compute(iEnc);
+		int sqrtDec = sqrtEnc.to_int();
+		if (((s*s == i) && (sqrtDec != s)) || ((s*s != i) && (sqrtDec != 0))) {
+			printf("Error with i=%d   sqrt=%d\n", i, sqrtDec);
+			return false;
+		}
+	}
+	return true;
+}
 
 
 #endif
