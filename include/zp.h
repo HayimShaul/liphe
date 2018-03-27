@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <istream>
 #include <ostream>
+#include <vector>
+#include <functional>
 
 #include <stdio.h>
 
