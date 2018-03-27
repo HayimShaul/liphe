@@ -27,5 +27,7 @@ int main(int, char**) {
 	skipDoTest("operator + <UnsignedWord < ZP<127> >", test_add, MyUnsignedWord, NULL, 1, -1);
 	skipDoTest("operator - <UnsignedWord < ZP<127> >", test_sub, MyUnsignedWord, NULL, 1, -1);
 	skipDoTest("operator * <UnsignedWord < ZP<127> >", test_mul, MyUnsignedWord, NULL, 1, -1);
+
+	doTest("Polynomial < ZP<127> >", test_polynomial, MyZP, NULL, 100000, -1);
 }
 
