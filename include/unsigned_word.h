@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <bitset>
 #include <vector>
+#include <functional>
 
 #include "binomial_tournament.h"
 
@@ -28,7 +29,7 @@ public:
 	static unsigned int simd_factor() { return Bit::simd_factor(); }
 
 	UnsignedWord(int n = 0);
-	UnsignedWord(std::vector<int> n);
+	UnsignedWord(std::vector<long int> n);
 	UnsignedWord(const Bit &b);
 	UnsignedWord(const UnsignedWord &u) : _bits(u._bits.size()) {
 		for (int i = 0; i < bitLength(); ++i) {
@@ -88,16 +89,17 @@ public:
 		if (this == &u)
 			return *this;
 
-		for (int i = 0; i < _bits.length(); ++i) {
+		for (unsigned int i = 0; i < _bits.size(); ++i) {
 			if (_bits[i] != NULL) {
 				delete _bits[i];
 				_bits[i] = NULL;
 			}
 
 			if (u._bits[i] != NULL) {
-				_bits[i] = new Bit(_bits[i]);
+				_bits[i] = new Bit(*(u._bits[i]));
 			}
 		}
+		return *this;
 	}
 
 	Bit operator==(const UnsignedWord<MAX_BIT_NUM, Bit> &b) const;
@@ -226,7 +228,7 @@ inline UnsignedWord<MAX_BIT_NUM, Bit>::UnsignedWord(int n) {
 }
 
 template<int MAX_BIT_NUM, class Bit>
-inline UnsignedWord<MAX_BIT_NUM, Bit>::UnsignedWord(std::vector<int> n) {
+inline UnsignedWord<MAX_BIT_NUM, Bit>::UnsignedWord(std::vector<long int> n) {
 
 	std::function<bool()> is_all_zero = [&n]()->bool {
 		for (auto i = n.begin(); i != n.end(); ++i)
@@ -262,6 +264,9 @@ inline void UnsignedWord<MAX_BIT_NUM, Bit>::operator+=(const UnsignedWord<MAX_BI
 
 	int i;
 	Bit carry(0);
+
+	// TODO: assumes p=2
+	// specifically: a+b is assumed to be xor
 
 	UnsignedWord<MAX_BIT_NUM, Bit> &bits = *this;
 
