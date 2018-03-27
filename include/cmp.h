@@ -1,6 +1,8 @@
 #ifndef ___COMPARE_LIPHE__
 #define ___COMPARE_LIPHE__
 
+#include <polynomial.h>
+
 template <class Number>
 class CompareEuler {
 private:
