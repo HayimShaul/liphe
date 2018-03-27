@@ -214,13 +214,11 @@ inline std::ostream &operator<<(std::ostream &out, const HelibNumber &z) {
 }
 
 inline std::istream &operator>>(std::istream &in, HelibNumber &z) {
-	char c;
-
-	in >> z._val >> c;
+	in >> z._val;
 
 	in
-		>> z._mul_depth >> c
-		>> z._add_depth >> c;
+		>> z._mul_depth
+		>> z._add_depth;
 
 	return in;
 }
