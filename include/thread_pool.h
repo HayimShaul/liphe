@@ -80,16 +80,20 @@ public:
 		sem_post(&_threads);
 	}
 
-	void submit_job(std::function<void(void)> &f) {
+	void submit_job(const std::function<void(void)> &f) {
 		Thread *t = new Thread(f, this);
 		_jobs.push_back(t);
 		process_jobs(0);
 	}
 
-	bool has_free_cpu() {
+	int get_free_cpu() {
 		int ret;
 		sem_getvalue(&_threads, &ret);
-		return ret > 0;
+		return ret;
+	}
+
+	bool has_free_cpu() {
+		return get_free_cpu() > 0;
 	}
 
 	void process_jobs(int iterations = -1) {
@@ -97,11 +101,19 @@ public:
 		while ((iterations == -1) || (iter >= 0)) {
 			bool all_is_done = false;
 
+			int waiting = 0;
+			int running = 0;
+
 			all_is_done = true;
 			auto i = _jobs.begin();
 			while (i != _jobs.end()) {
 				if ((*i)->_state != Thread::Done)
 					all_is_done = false;
+
+				if ((*i)->_state == Thread::Running)
+					++running;
+				if ((*i)->_state == Thread::Waiting)
+					++waiting;
 
 				if ((*i)->_state == Thread::Zombie) {
 					(*i)->_thread.join();
@@ -112,6 +124,8 @@ public:
 				} else
 					++i;
 			}
+
+//			std::cerr << "Waiting: " << waiting << "    running: " << running << "     semaphore: " << get_free_cpu() << std::endl;
 
 			if (all_is_done)
 				return;
@@ -140,7 +154,9 @@ public:
 inline void Thread::run() {
 	_state = Running;
 	_thread = std::thread( [this](){
+//		std::cout << "starting thread" << std::endl;
 		_f();
+//		std::cout << "ending thread" << std::endl;
 		_state = Zombie;
 		_pool->notify_thread_finished();
 	});
