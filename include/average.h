@@ -86,7 +86,7 @@ public:
 	void add_simd(std::shared_ptr<InNumber> x, std::mutex *mutex = NULL, ThreadPool *threads = NULL) {
 
 		std::function<void(void)> one_pass = [x, threads, mutex, this](){
-			std::vector<int> a_i(x.get()->simd_factor());
+			std::vector<long int> a_i(x.get()->simd_factor());
 
 			if (mutex != NULL)
 				mutex->lock();
