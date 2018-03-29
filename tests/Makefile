@@ -1,15 +1,15 @@
 CCFLAGS = -g --std=c++11 -Wall
 
-NTLINCDIR = -I/home/hayim/academic/fhe/ntl-9.6.2/include
-NTLLIBDIR = -L/home/hayim/academic/fhe/ntl-9.6.2/src
+NTLINCDIR = -I../../ntl-10.5.0-multithread/include
+NTLLIBDIR = ../../ntl-10.5.0-multithread/src
 
-FHEINCDIR = -I/home/hayim/academic/fhe/HElib-master/src
-FHELIBDIR = /home/hayim/academic/fhe/HElib-master/src
+FHEINCDIR = -I../../HElib-multithread/src
+FHELIBDIR = ../../HElib-multithread/src
 
 LIPHEINCDIR = -I../include
 LIPHELIBDIR = -L../src
 
-LIBS = $(LIPHELIBDIR) -lliphe $(FHELIBDIR)/fhe.a $(NTLLIBDIR) -lntl
+LIBS = $(LIPHELIBDIR) -lliphe $(FHELIBDIR)/fhe.a $(NTLLIBDIR)/ntl.a -lgmp -lpthread
 INCS = $(NTLINCDIR) $(FHEINCDIR) $(LIPHEINCDIR)
 
 all: test_zp test_helib

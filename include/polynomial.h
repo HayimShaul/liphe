@@ -192,6 +192,12 @@ std::cerr << "computing power of " << p << std::endl;
 		_coef[n] = c;
 	}
 
+	int get_coef(int n) {
+		if (n >= _coef.size())
+			return 0;
+		return _coef[n];
+	}
+
 	Number batch_coefficient(const std::vector<int> &coef, int start, int end, const Number *powers) const {
 		AddBinomialTournament<Number> ret;
 
@@ -423,40 +429,49 @@ std::cerr << "computing power of " << p << std::endl;
 		return ret;
 	}
 
-<<<<<<< HEAD
-=======
 	template<class SourceIterator>
-	static Polynomial<Number> build_polynomial_with_small_source(int p, const SourceIterator &imageBegin, const SourceIterator &imageEnd, const std::function<int(int)> &func) {
-		NTL::ZZ_p::init(NTL::ZZ(p));
+	static Polynomial<Number> build_polynomial_with_small_source(int ringSize, const SourceIterator &imageBegin, const SourceIterator &imageEnd, const std::function<int(int)> &func) {
+		NTL::ZZ_p::init(NTL::ZZ(ringSize));
 
 		NTL::ZZ_pX poly(NTL::INIT_MONO, 0, 0);
 
-		int phi_p = phi(p);
+		int phi_p = phi(ringSize);
 
 		for (SourceIterator img = imageBegin; img != imageEnd; ++img) {
 			NTL::ZZ_pX monomial(NTL::INIT_MONO, 0, 1);
 			NTL::ZZ_pX coefficient(NTL::INIT_MONO, 0, 1);
 			for (SourceIterator x = imageBegin; x != imageEnd; ++x) {
-				monomial = poly_mul(monomial, x_(*x), p);
-				coefficient = poly_mul(coefficient, NTL::ZZ_pX(NTL::INIT_MONO, 0, func(*img) - (*x)), p);
+				if (x != img) {
+					monomial = poly_mul(monomial, x_(*x), ringSize);
+					coefficient = poly_mul(coefficient, NTL::ZZ_pX(NTL::INIT_MONO, 0, (*img) - (*x)), ringSize);
+				}
 			}
-			coefficient = poly_power(coefficient, phi_p - 1, p);
+			coefficient = poly_power(coefficient, phi_p - 1, ringSize);
 
-			poly += monomial*coefficient;
+			poly += monomial * coefficient * NTL::ZZ_pX(NTL::INIT_MONO, 0, func(*img));
 		}
 
 		std::vector<int> coef(NTL::deg(poly) + 1);
-		for (int i = 0; i < NTL::deg(poly)+1; ++i)
+		for (int i = 0; i < coef.size(); ++i) {
 			conv(coef[i], poly[i]);
+		}
 
-		Polynomial<Number> ret = Polynomial(coef, p);
+		Polynomial<Number> ret = Polynomial(coef, ringSize);
 		return ret;
 	}
 
->>>>>>> cb07143dc2074f45229401400ac05163ffe25425
-
 };
 
+
+template<class Number>
+std::ostream &operator<<(std::ostream &out, Polynomial<Number> &o) {
+	for (int i = o.deg(); i >= 0; --i) {
+		out << o.get_coef(i) << "*x^" << i;
+		if (i != 0)
+			out << " ";
+	}
+	return out;
+}
 
 
 #endif

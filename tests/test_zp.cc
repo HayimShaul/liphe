@@ -11,7 +11,7 @@ typedef ZP<127> MyZP;
 typedef UnsignedWord<5, ZP<1> > MyUnsignedWord;
 
 int main(int, char**) {
-	MyZP::set_global_p(11);
+	MyZP::set_global_p(101);
 
 	skipDoTest("operator + <ZP<127> >", test_add, MyZP, NULL, 1, -1);
 	skipDoTest("operator - <ZP<127> >", test_sub, MyZP, NULL, 1, -1);
@@ -28,6 +28,7 @@ int main(int, char**) {
 	skipDoTest("operator - <UnsignedWord < ZP<127> >", test_sub, MyUnsignedWord, NULL, 1, -1);
 	skipDoTest("operator * <UnsignedWord < ZP<127> >", test_mul, MyUnsignedWord, NULL, 1, -1);
 
-	doTest("Polynomial < ZP<127> >", test_polynomial, MyZP, NULL, 100000, -1);
+	MyZP::set_global_p(101);
+	doTest("Polynomial < ZP<127> >", test_polynomial, MyZP, NULL, 1, -1);
 }
 

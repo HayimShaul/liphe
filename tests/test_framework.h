@@ -214,6 +214,7 @@ inline bool test_polynomial(void *data) {
 	int ring_size = Number::global_p();
 
 	std::vector<int> squares;
+	squares.push_back(0);
 	squares.push_back(1);
 	squares.push_back(4);
 	squares.push_back(9);
@@ -227,12 +228,14 @@ inline bool test_polynomial(void *data) {
 
 	for (int i = 0; i < 100; ++i) {
 		int s = sqrt(i);
-		Number iEnc(i);
-		Number sqrtEnc = my_sqrt.compute(iEnc);
-		int sqrtDec = sqrtEnc.to_int();
-		if (((s*s == i) && (sqrtDec != s)) || ((s*s != i) && (sqrtDec != 0))) {
-			printf("Error with i=%d   sqrt=%d\n", i, sqrtDec);
-			return false;
+		if (s*s == i) {
+			Number iEnc(i);
+			Number sqrtEnc = my_sqrt.compute(iEnc);
+			int sqrtDec = sqrtEnc.to_int();
+			if (sqrtDec != s) {
+				printf("Error with i=%d   sqrt=%d\n", i, sqrtDec);
+				return false;
+			}
 		}
 	}
 	return true;
