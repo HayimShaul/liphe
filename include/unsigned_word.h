@@ -29,7 +29,7 @@ public:
 	static unsigned int simd_factor() { return Bit::simd_factor(); }
 
 	UnsignedWord(int n = 0);
-	UnsignedWord(std::vector<long int> n);
+	UnsignedWord(const std::vector<long int> &n);
 	UnsignedWord(const Bit &b);
 	UnsignedWord(const UnsignedWord &u) : _bits(u._bits.size()) {
 		for (int i = 0; i < bitLength(); ++i) {
@@ -55,6 +55,11 @@ public:
 	}
 
 	static UnsignedWord<MAX_BIT_NUM, Bit> static_from_int(int c) {
+		UnsignedWord<MAX_BIT_NUM, Bit> ret(c);
+		return ret;
+	}
+
+	static UnsignedWord<MAX_BIT_NUM, Bit> static_from_int(const std::vector<long int> &c) {
 		UnsignedWord<MAX_BIT_NUM, Bit> ret(c);
 		return ret;
 	}
@@ -94,7 +99,10 @@ public:
 				delete _bits[i];
 				_bits[i] = NULL;
 			}
+		}
 
+		_bits.resize(u._bits.size());
+		for (unsigned int i = 0; i < _bits.size(); ++i) {
 			if (u._bits[i] != NULL) {
 				_bits[i] = new Bit(*(u._bits[i]));
 			}
@@ -228,7 +236,9 @@ inline UnsignedWord<MAX_BIT_NUM, Bit>::UnsignedWord(int n) {
 }
 
 template<int MAX_BIT_NUM, class Bit>
-inline UnsignedWord<MAX_BIT_NUM, Bit>::UnsignedWord(std::vector<long int> n) {
+inline UnsignedWord<MAX_BIT_NUM, Bit>::UnsignedWord(const std::vector<long int>& _n) {
+
+	std::vector<long int> n = _n;
 
 	std::function<bool()> is_all_zero = [&n]()->bool {
 		for (auto i = n.begin(); i != n.end(); ++i)
@@ -245,7 +255,7 @@ inline UnsignedWord<MAX_BIT_NUM, Bit>::UnsignedWord(std::vector<long int> n) {
 		_bits.push_back(new Bit(bit));
 
 		for (auto i = n.begin(); i != n.end(); ++i)
-			*i >>= 1;
+			(*i) >>= 1;
 	}
 
 	for (auto i = n.begin(); i != n.end(); ++i)

@@ -1,6 +1,7 @@
 #ifndef ___COMPARE_LIPHE__
 #define ___COMPARE_LIPHE__
 
+#include <map>
 #include <polynomial.h>
 
 template <class Number>
@@ -42,6 +43,7 @@ public:
 template <class Number>
 class ComparePoly {
 private:
+	static std::map<std::pair<int ,int>, Polynomial<Number> > _smaller_poly;
 	const Number &_val;
 
 	Polynomial<Number> range_polynomial(int min, int max) {
@@ -59,6 +61,41 @@ public:
 		Polynomial<Number> poly = range_polynomial(1, _val.p()/2) % _val.p();
 		return poly.compute(_val -b);
 	}
+
+	Number operator<(const int b) const {
+		if (b > Number::ring_size())
+			return Number(1);
+		if (b <= 0)
+			return Number(0);
+
+		auto key = std::pair<int,int>(Number::ring_size(), b);
+		auto poly = _smaller_poly.find(key);
+		if (poly == _smaller_poly.end()) {
+			poly = _smaller_poly.insert(key, Polynomial<Number>::build_polynomial(Number::ring_size(), Number::ring_size(), [b](int x)->int{ return (x < b) ? 1 : 0; }) );
+		}
+
+		return (*poly).compute(_val);
+	}
+
+	Number operator>(const int b) const {
+		if (b > _val.get_ring_size())
+			return Number(0);
+		if (b <= 0)
+			return Number(1);
+
+		auto key = std::pair<int,int>(_val.get_ring_size(), b);
+		auto poly = _smaller_poly.find(key);
+		if (poly == _smaller_poly.end()) {
+			Polynomial<Number> new_poly = Polynomial<Number>::build_polynomial(_val.get_ring_size(), _val.get_ring_size(), [b](int x)->int{ return (x > b) ? 1 : 0; });
+			auto add = std::pair<std::pair<int,int>, Polynomial<Number> >(key, new_poly);
+			poly = _smaller_poly.insert(add).first;
+		}
+
+		return (*poly).second.compute(_val);
+	}
 };
+
+template<class Number>
+std::map<std::pair<int,int>, Polynomial<Number> > ComparePoly<Number>::_smaller_poly;
 
 #endif
