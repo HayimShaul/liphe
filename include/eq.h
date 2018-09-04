@@ -30,13 +30,14 @@ CLASS power_mod(const CLASS &x, int e, int mod) {
 		CLASS y = (x * x) % mod;
 		return y;
 	}
-	if (e == 1)
+	if (e == 1) {
 		return x;
+	}
 
 	if (e & 1) {
-		return (x*power(x, e-1)) % mod;
+		return (x*power_mod(x, e-1, mod)) % mod;
 	} else {
-		return power((x*x) % mod, e/2);
+		return power_mod((x*x) % mod, e/2, mod);
 	}
 }
 
