@@ -68,9 +68,14 @@ public:
 		std::cerr << "c = " << _c << std::endl;
 	}
 
-	void add(const InNumber &x) {
-		for (int i = 0; i < _c; ++i) {
+	void add(const std::shared_ptr<InNumber> x, std::mutex *mutex = NULL, ThreadPool *threads = NULL) {
+
+		std::function<void(void)> one_pass = [x, threads, mutex, this](){
+			if (mutex != NULL)
+				mutex->lock();
 			int a_i = _distribution(_generator);
+			if (mutex != NULL)
+				mutex->unlock();
 			if ((bool) f_m)
 				a_i = f_m(a_i);
 
@@ -79,7 +84,19 @@ public:
 
 			OutNumber addon = Convert::convert(CompareIn(x) > a_i);
 
+			if (mutex != NULL)
+				mutex->lock();
 			_avg.add_to_tournament( addon );
+			if (mutex != NULL)
+				mutex->unlock();
+		}
+
+
+		for (int i = 0; i < _c; ++i) {
+			if (threads != NULL)
+				threads->submit_job(one_pass);
+			else
+				one_pass();
 		}
 	}
 
