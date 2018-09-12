@@ -1,13 +1,13 @@
 #ifndef ___HEAAN_KEYS___
 #define ___HEAAN_KEYS___
 
-#include <Context.h>
+#include <Ring.h>
 #include <SecretKey.h>
 #include <Scheme.h>
 
 class HeaanKeys {
 private:
-	Context *_context;
+	Ring *_context;
 	SecretKey *_secretKey;
 	Scheme *_scheme;
 
@@ -22,8 +22,8 @@ public:
 		_logN = logN;
 		_logP = logP;
 		_logQ = logQ;
-		_context = new Context(_logN, _logQ);
-		_secretKey = new SecretKey(_logN);
+		_context = new Ring(_logN, _logQ);
+		_secretKey = new SecretKey(*_context);
 		_scheme = new Scheme(*_secretKey, *_context);
 	}
 
