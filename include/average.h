@@ -70,7 +70,7 @@ public:
 
 	void add(const std::shared_ptr<InNumber> x, std::mutex *mutex = NULL, ThreadPool *threads = NULL) {
 
-		std::function<void(void)> one_pass = [x, threads, mutex, this](){
+		std::function<void(void)> one_pass = [x, threads, mutex, this]() {
 			if (mutex != NULL)
 				mutex->lock();
 			int a_i = _distribution(_generator);
@@ -89,7 +89,7 @@ public:
 			_avg.add_to_tournament( addon );
 			if (mutex != NULL)
 				mutex->unlock();
-		}
+		};
 
 
 		for (int i = 0; i < _c; ++i) {

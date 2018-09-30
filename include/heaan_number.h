@@ -42,7 +42,7 @@ public:
 	double to_float() {
 		complex<double>* m = _keys->scheme()->decrypt(*_keys->secretKey(), _val);
 		double ret = m->real();
-		delete m;
+		delete[] m;
 		return ret;
 	}
 
