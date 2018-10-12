@@ -23,8 +23,8 @@ public:
 		_logP = logP;
 		_logQ = logQ;
 		_context = new Ring(_logN, _logQ);
-		_secretKey = new SecretKey(*_context);
-		_scheme = new Scheme(*_secretKey, *_context);
+		_secretKey = new SecretKey(_context);
+		_scheme = new Scheme(_secretKey, _context);
 	}
 
 	void encrypt(Ciphertext &c, float f) {
@@ -36,7 +36,7 @@ public:
 	}
 
 	double decrypt(Ciphertext &c) {
-		complex<double> *m = _scheme->decrypt(*_secretKey, c);
+		complex<double> *m = _scheme->decrypt(_secretKey, &c);
 		double ret = m->real();
 		delete m;
 		return ret;
