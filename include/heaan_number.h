@@ -47,6 +47,10 @@ public:
 	}
 
 
+	void operator=(const HeaanNumber &f) {
+		_val = f._val;
+	}
+
 	HeaanNumber operator*(const HeaanNumber &f) {
 		HeaanNumber ret(*this);
 		ret *= f;
