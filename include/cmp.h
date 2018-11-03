@@ -46,11 +46,11 @@ private:
 	static std::map<std::pair<int ,int>, Polynomial<Number> > _smaller_poly;
 	const Number &_val;
 
-	Polynomial<Number> range_polynomial(int min, int max) {
+	Polynomial<Number> range_polynomial(int min, int max) const {
 		int phi = ::phi(_val.p());
 		Polynomial<Number> poly(0);
 		for (int i = 1; i < _val.p()/2; ++i)
-			poly += Polynomial<Number>(1) - Polynomial<Number>(1, "-x")^phi;
+			poly += Polynomial<Number>(1) - (Polynomial<Number>(1, "-x")^phi);
 		return poly;
 	}
 
@@ -78,7 +78,7 @@ public:
 	}
 
 	Number operator>(const int b) const {
-		if (b > _val.get_ring_size())
+		if (b >= _val.get_ring_size() - 1)
 			return Number(0);
 		if (b <= 0)
 			return Number(1);

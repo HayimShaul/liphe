@@ -13,7 +13,7 @@ private:
 	int _mul_depth;
 	int _add_depth;
 
-	long long power(long long base, long long exp) const {
+	static long long power(long long base, long long exp) {
 		long long ret = 1;
 		for (int i = 0; i < exp; ++i)
 			ret *= base;
@@ -70,6 +70,7 @@ public:
 
 	static unsigned int simd_factor() { return _prev_keys->simd_factor(); }
 	int get_ring_size() const { return power(_keys->p(), _keys->r()); }
+	static int get_global_ring_size() { return power(_prev_keys->p(), _prev_keys->r()); }
 	int p() const { return _keys->p(); }
 	int r() const { return _keys->r(); }
 	void assert_co_prime(int) const {}

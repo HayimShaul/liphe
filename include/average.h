@@ -82,7 +82,7 @@ public:
 			// the case of a_i=0 is not interesting to compare to because when x_i = a_i = 0 it is not
 			// going to contribute to the average anyway
 
-			OutNumber addon = Convert::convert(CompareIn(x) > a_i);
+			OutNumber addon = Convert::convert(CompareIn(*x) > a_i);
 
 			if (mutex != NULL)
 				mutex->lock();
@@ -325,5 +325,12 @@ inline OutNumber average_by_probability(InNumber *array, int size) {
 
 	return average_by_probability<OutNumber, CompareIn>(begin, end);
 }
+
+
+template<class Number>
+class NoConversion {
+public:
+	static Number convert(const Number &w) { return w; }
+};
 
 #endif
