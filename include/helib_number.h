@@ -196,6 +196,18 @@ std::cout << "bit = " << bit.to_int() << std::endl;
 		return ret;
 	}
 
+	HelibNumber shift_left(int step) {
+		HelibNumber ret(*this);
+		_keys->shift(ret._val, step);
+		return ret;
+	}
+
+	HelibNumber shift_right(int step) {
+		HelibNumber ret(*this);
+		_keys->shift(ret._val, -step);
+		return ret;
+	}
+
 	void reduceNoiseLevel() {
 		_val.modDownToLevel(_val.findBaseLevel());
 	}

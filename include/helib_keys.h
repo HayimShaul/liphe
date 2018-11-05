@@ -48,6 +48,7 @@ public:
 	void print(const Ctxt &b);
 
 	void rotate(Ctxt &a, int step) { _ea->rotate(a, step); }
+	void shift(Ctxt &a, int step) { _ea->shift(a, step); }
 };
 
 #endif

@@ -58,8 +58,34 @@ public:
 	ComparePoly(const Number &v) : _val(v) {}
 
 	Number operator<(const Number &b) const {
-		Polynomial<Number> poly = range_polynomial(1, _val.p()/2) % _val.p();
-		return poly.compute(_val -b);
+//		Polynomial<Number> poly = range_polynomial(1, _val.p()/2) % _val.p();
+//		return poly.compute(_val -b);
+
+		auto key = std::pair<int,int>(_val.get_ring_size(), _val.get_ring_size());
+		auto poly = _smaller_poly.find(key);
+		if (poly == _smaller_poly.end()) {
+			int half = _val.get_ring_size() / 2;
+			Polynomial<Number> new_poly = Polynomial<Number>::build_polynomial(_val.get_ring_size(), _val.get_ring_size(), [half](int x)->int{ return (x > half) ? 1 : 0; });
+
+			auto add = std::pair<std::pair<int,int>, Polynomial<Number> >(key, new_poly);
+			poly = _smaller_poly.insert(add).first;
+		}
+
+		return (*poly).second.compute(_val - b);
+	}
+
+	Number operator>(const Number &b) const {
+		auto key = std::pair<int,int>(_val.get_ring_size(), _val.get_ring_size());
+		auto poly = _smaller_poly.find(key);
+		if (poly == _smaller_poly.end()) {
+			int half = _val.get_ring_size() / 2;
+			Polynomial<Number> new_poly = Polynomial<Number>::build_polynomial(_val.get_ring_size(), _val.get_ring_size(), [half](int x)->int{ return (x > half) ? 1 : 0; });
+
+			auto add = std::pair<std::pair<int,int>, Polynomial<Number> >(key, new_poly);
+			poly = _smaller_poly.insert(add).first;
+		}
+
+		return (*poly).second.compute(b -_val);
 	}
 
 	Number operator<(const int b) const {

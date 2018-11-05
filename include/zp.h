@@ -83,6 +83,24 @@ public:
 			_val[i] /= _p;
 	}
 
+	ZP shift_left(int step) const {
+		ZP ret(*this);
+
+		for (int i = 0; i < SIMD_SIZE; ++i)
+			if (i + step < SIMD_SIZE)
+				ret._val[i] = _val[i + step];
+		return ret;
+	}
+
+	ZP shift_right(int step) const {
+		ZP ret(*this);
+
+		for (int i = 0; i < SIMD_SIZE; ++i)
+			if (i - step >= 0)
+				ret._val[i] = _val[i - step];
+		return ret;
+	}
+
 	ZP rotate_left(int step) const {
 		ZP ret(*this);
 
