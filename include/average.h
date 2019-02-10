@@ -78,6 +78,8 @@ public:
 				mutex->unlock();
 			if ((bool) f_m)
 				a_i = f_m(a_i);
+			if (a_i > _max_sample)
+				a_i = _max_sample;
 
 			// the case of a_i=0 is not interesting to compare to because when x_i = a_i = 0 it is not
 			// going to contribute to the average anyway
@@ -112,7 +114,7 @@ public:
 				if ((bool) f_m)
 				a_i[simd_i] = f_m(a_i[simd_i]);
 				if ((_max_sample > 0) && (a_i[simd_i] > _max_sample)) {
-					a_i[simd_i] = _max_sample + 1;
+					a_i[simd_i] = _max_sample;
 				}
 			}
 			if (mutex != NULL)
