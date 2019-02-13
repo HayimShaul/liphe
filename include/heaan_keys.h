@@ -7,7 +7,7 @@
 
 class HeaanKeys {
 private:
-	Ring *_context;
+	Ring *_ring;
 	SecretKey *_secretKey;
 	Scheme *_scheme;
 
@@ -15,16 +15,16 @@ private:
 	long _logP;
 	long _logN;
 public:
-	HeaanKeys() : _context(NULL), _secretKey(NULL), _scheme(NULL), _logQ(0), _logP(0), _logN(0) {}
-	HeaanKeys(const HeaanKeys &h) : _context(h._context), _secretKey(h._secretKey), _scheme(h._scheme), _logQ(h._logQ), _logP(h._logP), _logN(h._logN) {}
+	HeaanKeys() : _ring(NULL), _secretKey(NULL), _scheme(NULL), _logQ(0), _logP(0), _logN(0) {}
+	HeaanKeys(const HeaanKeys &h) : _ring(h._ring), _secretKey(h._secretKey), _scheme(h._scheme), _logQ(h._logQ), _logP(h._logP), _logN(h._logN) {}
 
 	void initKeys(long logN, long logQ, long logP) {
 		_logN = logN;
 		_logP = logP;
 		_logQ = logQ;
-		_context = new Ring(_logN, _logQ);
-		_secretKey = new SecretKey(_context);
-		_scheme = new Scheme(_secretKey, _context);
+		_ring = new Ring();
+		_secretKey = new SecretKey(*_ring);
+		_scheme = new Scheme(*_secretKey, *_ring);
 	}
 
 	void encrypt(Ciphertext &c, float f) {
@@ -32,11 +32,11 @@ public:
 		m.real(f);
 		m.imag(0);
 
-		c = _scheme->encrypt(&m, 1, _logP, _logQ);
+		_scheme->encrypt(c, &m, 1, _logP, _logQ);
 	}
 
 	double decrypt(Ciphertext &c) {
-		complex<double> *m = _scheme->decrypt(_secretKey, &c);
+		complex<double> *m = _scheme->decrypt(*_secretKey, c);
 		double ret = m->real();
 		delete m;
 		return ret;
