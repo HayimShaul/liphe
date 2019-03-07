@@ -36,6 +36,9 @@ public:
 
 	template<class Iterator>
 	static void searchFirst(const Iterator &begin, const Iterator &end, std::vector<Number> &_output) {
+		static int max_mul_depth_after_iRT = 0;
+		static int max_mul_depth_after_first_isZero = 0;
+
 		BinomialTournament<Number> bins(BinomialTournament<Number>::add);
 
 		AddBinomialTournament<Number> *output = new AddBinomialTournament<Number>[_output.size()];
@@ -44,9 +47,9 @@ public:
 
 		// we actually need log(end - begin) but iterators don't always support that operation
 		// and _output.size() should be just that
-		std::pair<bool, Number> *compareCache = new std::pair<bool, Number>[_output.size()];
-		for (int i = 0; i < _output.size(); ++i)
-			compareCache[i].first = false;
+		std::vector<Number*> compareCache(_output.size());
+		for (int i = 0; i < compareCache.size(); ++i)
+			compareCache[i] = NULL;
 
 		// No need to iterate over i == 0 because we are going to multiply everything by i==0
 		Iterator i = begin;
@@ -60,13 +63,16 @@ public:
 				mul.add_to_tournament(bins.number(0));
 			for (int level = 1; level < _output.size(); ++level) {
 				if (!bins.is_slot_empty(level)) {
-					if (!compareCache[level].first) {
-						compareCache[level].second = (Compare(bins.number(level)) != 0);
-						compareCache[level].first = true;
+					if (compareCache[level] == NULL) {
+						Number *iii = new Number(Compare(bins.number(level)) == 0);
+						if (max_mul_depth_after_first_isZero < iii->mul_depth())
+							max_mul_depth_after_first_isZero = iii->mul_depth();
+						compareCache[level] = iii;
 					}
-					mul.add_to_tournament(compareCache[level].second);
+					mul.add_to_tournament(*(compareCache[level]));
 				} else {
-					compareCache[level].first = false;
+					delete compareCache[level];
+					compareCache[level] = NULL;
 				}
 			}
 //			Number prev = mul.unite_all();
