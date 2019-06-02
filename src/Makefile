@@ -1,10 +1,10 @@
 CCFLAGS = -g --std=c++11 -Wall
 
-NTLINCDIR = -I../../ntl-10.5.0/include
-NTLLIBDIR = -L../../ntl-10.5.0/src
+NTLINCDIR = -I../../ntl-10.5.0-multithread/include
+NTLLIBDIR = -L../../ntl-10.5.0-multithread/src
 
-HELIBINCDIR = -I../../HElib/src
-HELIBLIBDIR = -L../../HElib/src
+HELIBINCDIR = -I../../HElib-multithread/src
+HELIBLIBDIR = -L../../HElib-multithread/src
 
 HEAANINCDIR = -I../../HEAAN/HEAAN/src
 HEAANLIBDIR = -L../../HEAAN/HEAAN/src

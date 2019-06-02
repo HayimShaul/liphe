@@ -3,6 +3,7 @@
 
 #include <assert.h>
 #include <helib_keys.h>
+#include <zp.h>
 
 class HelibNumber {
 private:
@@ -21,9 +22,11 @@ private:
 	}
 
 	HelibNumber mult_by_recursive_adding(const HelibNumber &x, int e) {
-		assert(e >= 0);
 		if (e == 0)
 			return HelibNumber(0);
+
+		while (e < 0)
+			e += x.get_ring_size();
 
 		if (e == 2) {
 			HelibNumber y = x + x;
@@ -56,11 +59,7 @@ public:
 	static int static_in_range(int a) { while (a < 0) a += _prev_keys->p(); return a % _prev_keys->p(); }
 	int to_int() const { return _keys->decrypt(_val); }
 	std::vector<long int> to_vector() const { std::vector<long int> ret; _keys->decrypt(ret, _val); return ret; }
-	HelibNumber from_int(int i) const {
-			HelibNumber ret;
-			_keys->encrypt(ret._val, i);
-			return ret;
-		}
+	void from_int(int i) { _keys->encrypt(_val, i); }
 
 	static HelibNumber static_from_int(int i) {
 			HelibNumber ret;
@@ -107,11 +106,7 @@ public:
 
 	void operator-=(const HelibNumber &z) {
 		assert(_keys == z._keys);
-//std::cerr << "before -=\n";
-//std::cerr << "  level=" << _val.findBaseLevel() << ", log(noise/modulus)~" << _val.log_of_ratio() << endl;
 		_val -= z._val;
-//std::cerr << "after -=\n";
-//std::cerr << "  level=" << _val.findBaseLevel() << ", log(noise/modulus)~" << _val.log_of_ratio() << endl;
 		_mul_depth = max(_mul_depth, z._mul_depth);
 		_add_depth = max(_add_depth, z._add_depth) + 1;
 	}
@@ -138,6 +133,21 @@ public:
 	void operator-=(int z) { operator-=(HelibNumber(z)); }
 	void operator+=(int z) { operator+=(HelibNumber(z)); }
 	void operator*=(int z) { *this = mult_by_recursive_adding(*this, z); }
+
+	template<int S>
+	HelibNumber operator-(const ZP<S> &z) const { HelibNumber zp(*this); zp -= z; return zp; }
+	template<int S>
+	HelibNumber operator+(const ZP<S> &z) const { HelibNumber zp(*this); zp += z; return zp; }
+	template<int S>
+	HelibNumber operator*(const ZP<S> &z) const { HelibNumber zp(*this); zp *= z; return zp; }
+
+	template<int S>
+	void operator-=(const ZP<S> &z) { operator-=(z.to_int()); }
+	template<int S>
+	void operator+=(const ZP<S> &z) { operator+=(z.to_int()); }
+	template<int S>
+	void operator*=(const ZP<S> &z) { operator*=(z.to_int()); }
+
 
 //	template<class BITS>
 //	BITS to_digits() const {
@@ -215,6 +225,14 @@ std::cout << "bit = " << bit.to_int() << std::endl;
 	friend std::ostream &operator<<(std::ostream &out, const HelibNumber &z);
 	friend std::istream &operator>>(std::istream &in, HelibNumber &z);
 };
+
+template<int S>
+inline HelibNumber operator-(const ZP<S> &z, const HelibNumber &x) { return (-x)+z; }
+template<int S>
+inline HelibNumber operator+(const ZP<S> &z, const HelibNumber &x) { return x+z; }
+template<int S>
+inline HelibNumber operator*(const ZP<S> &z, const HelibNumber &x) { return x*z; }
+
 
 inline std::ostream &operator<<(std::ostream &out, const HelibNumber &z) {
 	out << z._val << " ";

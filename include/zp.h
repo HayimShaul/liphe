@@ -50,7 +50,7 @@ public:
 	std::vector<long int> to_vector() const { return std::vector<long int>(_val, _val + SIMD_SIZE); }
 	ZP clone() { return ZP(_val, _p, _r); }
 
-	ZP from_int(int i) const { return ZP(i); }
+	void from_int(int i) { _val[0] = in_range(i); }
 	static ZP static_from_int(int i) { return ZP(i); }
 
 	static unsigned int simd_factor() { return SIMD_SIZE; }
