@@ -77,6 +77,15 @@ public:
 		return *this;
 	}
 
+	HeaanNumber &operator*=(const double _f) {
+		// HEAAN operators do not get const arguments :(
+		_keys->scheme()->multByConst(_val, _val, _f, _keys->logP());
+		_keys->scheme()->reScaleByAndEqual(_val, _keys->logP());
+		_mul_depth += 1;
+		return *this;
+	}
+
+
 	HeaanNumber &operator+=(const HeaanNumber &_f) {
 		// HEAAN operators do not get const arguments :(
 		HeaanNumber f(_f);
