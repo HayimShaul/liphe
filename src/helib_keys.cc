@@ -209,6 +209,14 @@ void HelibKeys::encrypt(Ctxt &r, int b) {
 	_ea->encrypt(r, *_publicKey, _b);
 }
 
+void HelibKeys::encode(ZZX &r, long b) {
+	std::vector<long> _b(nslots(), b);
+	encode(r, _b);
+}
+
+void HelibKeys::encode(ZZX &r, const std::vector<long> &b) {
+	_ea->encode(r, b);
+}
 
 long HelibKeys::decrypt(const Ctxt &b) {
 	std::vector<long> out;

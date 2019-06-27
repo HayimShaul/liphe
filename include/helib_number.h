@@ -130,9 +130,21 @@ public:
 	HelibNumber operator+(int z) const { HelibNumber zp(*this); zp += z; return zp; }
 	HelibNumber operator*(int z) const { HelibNumber zp(*this); zp *= z; return zp; }
 
-	void operator-=(int z) { operator-=(HelibNumber(z)); }
-	void operator+=(int z) { operator+=(HelibNumber(z)); }
-	void operator*=(int z) { *this = mult_by_recursive_adding(*this, z); }
+	void operator-=(int z) {
+		ZZX z_poly;
+		_keys->encode(z_poly, -z);
+		_val.addConstant(z_poly);
+	}
+	void operator+=(int z) {
+		ZZX z_poly;
+		_keys->encode(z_poly, z);
+		_val.addConstant(z_poly);
+	}
+	void operator*=(int z) {
+		ZZX z_poly;
+		_keys->encode(z_poly, z);
+		_val.multByConstant(z_poly);
+	}
 
 	template<int S>
 	HelibNumber operator-(const ZP<S> &z) const { HelibNumber zp(*this); zp -= z; return zp; }

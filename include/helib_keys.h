@@ -36,11 +36,17 @@ public:
 	void encrypt(Ctxt &c, int b);
 	long decrypt(const Ctxt &b);
 
+	ZZX encode(long z);
+	ZZX encode(std::vector<long> &z);
+
 	Ctxt encrypt(const std::vector<long> &b);
 	Ctxt encrypt(const std::vector<int> &b);
 	void encrypt(Ctxt &c, const std::vector<long> &b);
 	void encrypt(Ctxt &c, const std::vector<int> &b);
 	void decrypt(std::vector<long> &, const Ctxt &b);
+
+	void encode(ZZX &r, long b);
+	void encode(ZZX &r, const std::vector<long> &b);
 
 	void write_to_file(std::ostream& s);
 	void read_from_file(std::istream& s);

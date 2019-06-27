@@ -275,29 +275,49 @@ inline void UnsignedWord<MAX_BIT_NUM, Bit>::operator+=(const UnsignedWord<MAX_BI
 	int i;
 	Bit carry(0);
 
-	// TODO: assumes p=2
-	// specifically: a+b is assumed to be xor
-
 	UnsignedWord<MAX_BIT_NUM, Bit> &bits = *this;
 
-	for (i = 0; i < min; ++i) {
-		Bit new_carry = w[i]*carry + bits[i]*(w[i] + carry);
-		bits[i] += w[i] + carry;
-		carry = new_carry;
-	}
+	if (bits[0].get_ring_size() == 2) {
+		for (i = 0; i < min; ++i) {
+			Bit new_carry = w[i]*carry + bits[i]*(w[i] + carry);
+			bits[i] += w[i] + carry;
+			carry = new_carry;
+		}
 
-	for (i = min; i < bitLength(); ++i) {
-		Bit new_carry =  bits[i]*carry;
-		bits[i] += carry;
-		carry = new_carry;
-	}
+		for (i = min; i < bitLength(); ++i) {
+			Bit new_carry =  bits[i]*carry;
+			bits[i] += carry;
+			carry = new_carry;
+		}
 
-	_bits.resize(std::min(len + 1, MAX_BIT_NUM));
+		_bits.resize(std::min(len + 1, MAX_BIT_NUM));
 
-	for (i = min; i < w.bitLength(); ++i) {
-		Bit new_carry = w[i]*carry;
-		bits[i] = w[i] + carry;
-		carry = new_carry;
+		for (i = min; i < w.bitLength(); ++i) {
+			Bit new_carry = w[i]*carry;
+			bits[i] = w[i] + carry;
+			carry = new_carry;
+		}
+	} else {
+		for (i = 0; i < min; ++i) {
+			Bit temp = w[i]*carry*bits[i];
+			Bit new_carry = w[i]*carry + bits[i]*(w[i] + carry) - temp - temp;
+			bits[i] += w[i] + carry - new_carry - new_carry;
+			carry = new_carry;
+		}
+
+		for (i = min; i < bitLength(); ++i) {
+			Bit new_carry =  bits[i]*carry;
+			bits[i] += carry - new_carry - new_carry;
+			carry = new_carry;
+		}
+
+		_bits.resize(std::min(len + 1, MAX_BIT_NUM));
+
+		for (i = min; i < w.bitLength(); ++i) {
+			Bit new_carry = w[i]*carry;
+			bits[i] = w[i] + carry - new_carry - new_carry;
+			carry = new_carry;
+		}
 	}
 
 	if (len < MAX_BIT_NUM)
