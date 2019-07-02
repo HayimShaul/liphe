@@ -15,6 +15,13 @@ class ZP {
 private:
 	static long long _prev_p;
 	static long long _prev_r;
+
+	static long long getPrevP() { return _prev_p; }
+	static long long getPrevR() { return _prev_r; }
+
+	static std::function<long long (void)> _getP;
+	static std::function<long long (void)> _getR;
+
 	long long _p;
 	long long _r;
 	long long _val[SIMD_SIZE];
@@ -34,10 +41,10 @@ private:
 	void set_all(long long a) { for (int i = 0; i < SIMD_SIZE; ++i) _val[i] = in_range(a); }
 		
 public:
-	ZP() : _p(_prev_p), _r(_prev_r),  _mul_depth(0), _add_depth(0) {}
-	ZP(long long v) : _p(_prev_p), _r(_prev_r),  _mul_depth(0), _add_depth(0) { set_all(v); }
-	ZP(const std::vector<long int> &v) : _p(_prev_p), _r(_prev_r),  _mul_depth(0), _add_depth(0) { for (unsigned int i = 0; (i < v.size()) && (i < SIMD_SIZE); ++i) _val[i] = in_range(v[i]); }
-	ZP(long long v, long long p) : _p(p), _r(_prev_r),  _mul_depth(0), _add_depth(0) { set_all(v); }
+	ZP() : _p(_getP()), _r(_getR()),  _mul_depth(0), _add_depth(0) {}
+	ZP(long long v) : _p(_getP()), _r(_getR()),  _mul_depth(0), _add_depth(0) { set_all(v); }
+	ZP(const std::vector<long int> &v) : _p(_getP()), _r(_getR()),  _mul_depth(0), _add_depth(0) { for (unsigned int i = 0; (i < v.size()) && (i < SIMD_SIZE); ++i) _val[i] = in_range(v[i]); }
+	ZP(long long v, long long p) : _p(p), _r(_getR()),  _mul_depth(0), _add_depth(0) { set_all(v); }
 	ZP(long long v, long long p, long long r) : _p(p), _r(r),  _mul_depth(0), _add_depth(0) { set_all(v); }
 	ZP(const ZP &zp) : _p(zp._p), _r(zp._r), _mul_depth(zp._mul_depth), _add_depth(zp._add_depth) {
 		for (int i = 0; i < SIMD_SIZE; ++i)
@@ -45,18 +52,22 @@ public:
 	}
 
 	int in_range(int a) const { while (a < 0) a += power(_p,_r); return a % power(_p,_r); }
-	static int static_in_range(int a) { while (a < 0) a += power(_prev_p,_prev_r); return a % power(_prev_p,_prev_r); }
+	static int static_in_range(int a) { while (a < 0) a += power(_getP(),_getR()); return a % power(_getP(),_getR()); }
 	int to_int() const { return _val[0] % power(_p,_r); }
 	std::vector<long int> to_vector() const { return std::vector<long int>(_val, _val + SIMD_SIZE); }
 	ZP clone() { return ZP(_val, _p, _r); }
 
-	void from_int(int i) { _val[0] = in_range(i); }
-	static ZP static_from_int(int i) { return ZP(i); }
+	void from_int(long i) { _val[0] = in_range(i); }
+	static ZP static_from_int(long i) { return ZP(i); }
+	void from_vector(const std::vector<long> &in) {
+		for (unsigned int i = 0; i < std::min((unsigned long)SIMD_SIZE, in.size()); ++i)
+			_val[i] = in_range(in[i]);
+	}
 
 	static unsigned int simd_factor() { return SIMD_SIZE; }
 	static void set_global_p(long long p, long long r = 1) { _prev_p = p; _prev_r = r; }
-	static int global_p() { return _prev_p; }
-	static int get_global_ring_size() { return power(_prev_p, _prev_r); }
+	static int global_p() { return _getP(); }
+	static int get_global_ring_size() { return power(_getP(), _getR()); }
 	void set_p(long long p, long long r = 1) { _p = _prev_p = p; _r = _prev_r = r; }
 	long long p() const { return _p; }
 	long long r() const { return _r; }
@@ -202,6 +213,12 @@ long long ZP<SIMD_SIZE>::_prev_p = 2;
 
 template<int SIMD_SIZE>
 long long ZP<SIMD_SIZE>::_prev_r = 1;
+
+template<int SIMD_SIZE>
+std::function<long long(void)> ZP<SIMD_SIZE>::_getR = ZP<SIMD_SIZE>::getPrevR;
+
+template<int SIMD_SIZE>
+std::function<long long(void)> ZP<SIMD_SIZE>::_getP = ZP<SIMD_SIZE>::getPrevP;
 
 
 template<int SIMD_SIZE>

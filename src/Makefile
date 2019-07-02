@@ -17,16 +17,16 @@ OBJ = primes.o thread_pool.o # heaan_number.o
 all: libliphe.a libHelibLiphe.a
 
 libliphe.a: $(OBJ)
-	ar rUv libliphe.a $(OBJ)
+	ar rUv $@ $^
 
 libHelibLiphe.a: helib_keys.o helib_number.o
-	ar rUv libHelibLiphe.a $(OBJ)
+	ar rUv $@ $^
 
 libHeaanLiphe.a: heaan_number.o
-	ar rUv libHeaanLiphe.a $(OBJ)
+	ar rUv $@ $^
 
 %.o: %.cc
 	g++ $(CCFLAGS) -c  $(INCS) $<
 
 clean:
-	rm -f *.o libliphe.a
+	rm -f *.o *.a

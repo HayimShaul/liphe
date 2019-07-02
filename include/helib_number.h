@@ -8,6 +8,9 @@
 class HelibNumber {
 private:
 	static HelibKeys *_prev_keys;
+	static HelibKeys *getPrevKeys() { return _prev_keys; }
+	static std::function<HelibKeys *(void)> _getKeys;
+
 	HelibKeys *_keys;
 	Ctxt _val;
 
@@ -45,31 +48,31 @@ private:
 //	void print(const char *s) { std::cerr << s << " HELIB " << (&_val) << std::endl; }
 	void print(const char *s) {}
 public:
-	HelibNumber() : _keys(_prev_keys), _val(_prev_keys->publicKey()), _mul_depth(0), _add_depth(0) { print("allocating"); }
-	HelibNumber(long long v) : _keys(_prev_keys), _val(_keys->publicKey()), _mul_depth(0), _add_depth(0) { _keys->encrypt(_val, v); print("allocating"); }
-	HelibNumber(const std::vector<long> &v) : _keys(_prev_keys), _val(_keys->publicKey()), _mul_depth(0), _add_depth(0) { _keys->encrypt(_val, v); print("allocating"); }
+	HelibNumber() : _keys(_getKeys()), _val(_getKeys()->publicKey()), _mul_depth(0), _add_depth(0) { print("allocating"); }
+	HelibNumber(long long v) : _keys(_getKeys()), _val(_keys->publicKey()), _mul_depth(0), _add_depth(0) { _keys->encrypt(_val, v); print("allocating"); }
+	HelibNumber(const std::vector<long> &v) : _keys(_getKeys()), _val(_keys->publicKey()), _mul_depth(0), _add_depth(0) { _keys->encrypt(_val, v); print("allocating"); }
 	HelibNumber(const HelibNumber &n) : _keys(n._keys), _val(n._val), _mul_depth(n._mul_depth), _add_depth(n._add_depth) {print("allocating"); }
-	HelibNumber(const Ctxt &n) : _keys(_prev_keys), _val(n), _mul_depth(0), _add_depth(0) {print("allocating"); }
+	HelibNumber(const Ctxt &n) : _keys(_getKeys()), _val(n), _mul_depth(0), _add_depth(0) {print("allocating"); }
 
 	~HelibNumber() {print("deleting"); }
 
-	static int global_p() { return _prev_keys->p(); }
+	static int global_p() { return _getKeys()->p(); }
 	static void set_global_keys(HelibKeys *k) { _prev_keys = k; }
 	int in_range(int a) const { while (a < 0) a += _keys->p(); return a % _keys->p(); }
-	static int static_in_range(int a) { while (a < 0) a += _prev_keys->p(); return a % _prev_keys->p(); }
+	static int static_in_range(int a) { while (a < 0) a += _getKeys()->p(); return a % _getKeys()->p(); }
 	int to_int() const { return _keys->decrypt(_val); }
 	std::vector<long int> to_vector() const { std::vector<long int> ret; _keys->decrypt(ret, _val); return ret; }
 	void from_int(int i) { _keys->encrypt(_val, i); }
 
 	static HelibNumber static_from_int(int i) {
 			HelibNumber ret;
-			_prev_keys->encrypt(ret._val, i);
+			_getKeys()->encrypt(ret._val, i);
 			return ret;
 		}
 
-	static unsigned int simd_factor() { return _prev_keys->simd_factor(); }
+	static unsigned int simd_factor() { return _getKeys()->simd_factor(); }
 	int get_ring_size() const { return power(_keys->p(), _keys->r()); }
-	static int get_global_ring_size() { return power(_prev_keys->p(), _prev_keys->r()); }
+	static int get_global_ring_size() { return power(_getKeys()->p(), _getKeys()->r()); }
 	int p() const { return _keys->p(); }
 	int r() const { return _keys->r(); }
 	void assert_co_prime(int) const {}
