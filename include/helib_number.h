@@ -24,7 +24,7 @@ private:
 		return ret;
 	}
 
-	HelibNumber mult_by_recursive_adding(const HelibNumber &x, int e) {
+	HelibNumber mult_by_recursive_adding(const HelibNumber &x, long e) {
 		if (e == 0)
 			return HelibNumber(0);
 
@@ -60,9 +60,9 @@ public:
 	static void set_global_keys(HelibKeys *k) { _prev_keys = k; }
 	int in_range(int a) const { while (a < 0) a += _keys->p(); return a % _keys->p(); }
 	static int static_in_range(int a) { while (a < 0) a += _getKeys()->p(); return a % _getKeys()->p(); }
-	int to_int() const { return _keys->decrypt(_val); }
+	long to_int() const { return _keys->decrypt(_val); }
 	std::vector<long int> to_vector() const { std::vector<long int> ret; _keys->decrypt(ret, _val); return ret; }
-	void from_int(int i) { _keys->encrypt(_val, i); }
+	void from_int(long i) { _keys->encrypt(_val, i); }
 
 	static HelibNumber static_from_int(int i) {
 			HelibNumber ret;
@@ -129,21 +129,21 @@ public:
 	}
 
 
-	HelibNumber operator-(int z) const { HelibNumber zp(*this); zp -= z; return zp; }
-	HelibNumber operator+(int z) const { HelibNumber zp(*this); zp += z; return zp; }
-	HelibNumber operator*(int z) const { HelibNumber zp(*this); zp *= z; return zp; }
+	HelibNumber operator-(long z) const { HelibNumber zp(*this); zp -= z; return zp; }
+	HelibNumber operator+(long z) const { HelibNumber zp(*this); zp += z; return zp; }
+	HelibNumber operator*(long z) const { HelibNumber zp(*this); zp *= z; return zp; }
 
-	void operator-=(int z) {
+	void operator-=(long z) {
 		ZZX z_poly;
 		_keys->encode(z_poly, -z);
 		_val.addConstant(z_poly);
 	}
-	void operator+=(int z) {
+	void operator+=(long z) {
 		ZZX z_poly;
 		_keys->encode(z_poly, z);
 		_val.addConstant(z_poly);
 	}
-	void operator*=(int z) {
+	void operator*=(long z) {
 		ZZX z_poly;
 		_keys->encode(z_poly, z);
 		_val.multByConstant(z_poly);
@@ -197,7 +197,6 @@ public:
 			extractDigits(bits, n._val, 0, false);
 
 			HelibNumber bit(bits[0]);
-std::cout << "bit = " << bit.to_int() << std::endl;
 			bit.mul_depth(mul_depth());
 			bit.add_depth(add_depth());
 			ret.set_bit(i, bit);
