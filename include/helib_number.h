@@ -63,6 +63,7 @@ public:
 	long to_int() const { return _keys->decrypt(_val); }
 	std::vector<long int> to_vector() const { std::vector<long int> ret; _keys->decrypt(ret, _val); return ret; }
 	void from_int(long i) { _keys->encrypt(_val, i); }
+	void from_vector(const std::vector<long> &i) { _keys->encrypt(_val, i); }
 
 	static HelibNumber static_from_int(int i) {
 			HelibNumber ret;
@@ -133,6 +134,10 @@ public:
 	HelibNumber operator+(long z) const { HelibNumber zp(*this); zp += z; return zp; }
 	HelibNumber operator*(long z) const { HelibNumber zp(*this); zp *= z; return zp; }
 
+	HelibNumber operator-(const std::vector<long> &z) const { HelibNumber zp(*this); zp -= z; return zp; }
+	HelibNumber operator+(const std::vector<long> &z) const { HelibNumber zp(*this); zp += z; return zp; }
+	HelibNumber operator*(const std::vector<long> &z) const { HelibNumber zp(*this); zp *= z; return zp; }
+
 	void operator-=(long z) {
 		ZZX z_poly;
 		_keys->encode(z_poly, -z);
@@ -149,19 +154,32 @@ public:
 		_val.multByConstant(z_poly);
 	}
 
-	template<int S>
-	HelibNumber operator-(const ZP<S> &z) const { HelibNumber zp(*this); zp -= z; return zp; }
-	template<int S>
-	HelibNumber operator+(const ZP<S> &z) const { HelibNumber zp(*this); zp += z; return zp; }
-	template<int S>
-	HelibNumber operator*(const ZP<S> &z) const { HelibNumber zp(*this); zp *= z; return zp; }
+	void operator-=(const std::vector<long> &_z) {
+		std::vector<long> z(_z.size());
+		for (unsigned int i = 0; i < z.size(); ++i)
+			z[i] = -_z[i];
+		ZZX z_poly;
+		_keys->encode(z_poly, z);
+		_val.addConstant(z_poly);
+	}
+	void operator+=(const std::vector<long> &z) {
+		ZZX z_poly;
+		_keys->encode(z_poly, z);
+		_val.addConstant(z_poly);
+	}
+	void operator*=(const std::vector<long> &z) {
+		ZZX z_poly;
+		_keys->encode(z_poly, z);
+		_val.multByConstant(z_poly);
+	}
 
-	template<int S>
-	void operator-=(const ZP<S> &z) { operator-=(z.to_int()); }
-	template<int S>
-	void operator+=(const ZP<S> &z) { operator+=(z.to_int()); }
-	template<int S>
-	void operator*=(const ZP<S> &z) { operator*=(z.to_int()); }
+	HelibNumber operator-(const ZP &z) const { HelibNumber zp(*this); zp -= z; return zp; }
+	HelibNumber operator+(const ZP &z) const { HelibNumber zp(*this); zp += z; return zp; }
+	HelibNumber operator*(const ZP &z) const { HelibNumber zp(*this); zp *= z; return zp; }
+
+	void operator-=(const ZP &z) { operator-=(z.to_vector()); }
+	void operator+=(const ZP &z) { operator+=(z.to_vector()); }
+	void operator*=(const ZP &z) { operator*=(z.to_vector()); }
 
 
 //	template<class BITS>
@@ -240,12 +258,9 @@ public:
 	friend std::istream &operator>>(std::istream &in, HelibNumber &z);
 };
 
-template<int S>
-inline HelibNumber operator-(const ZP<S> &z, const HelibNumber &x) { return (-x)+z; }
-template<int S>
-inline HelibNumber operator+(const ZP<S> &z, const HelibNumber &x) { return x+z; }
-template<int S>
-inline HelibNumber operator*(const ZP<S> &z, const HelibNumber &x) { return x*z; }
+inline HelibNumber operator-(const ZP &z, const HelibNumber &x) { return (-x)+z; }
+inline HelibNumber operator+(const ZP &z, const HelibNumber &x) { return x+z; }
+inline HelibNumber operator*(const ZP &z, const HelibNumber &x) { return x*z; }
 
 
 inline std::ostream &operator<<(std::ostream &out, const HelibNumber &z) {

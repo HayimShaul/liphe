@@ -12,7 +12,7 @@ HEAANLIBDIR = -L../../HEAAN/HEAAN/src
 LIPHEINCDIR = -I../include
 INCS = $(NTLINCDIR) $(HELIBINCDIR) $(LIPHEINCDIR) $(HEAANINCDIR)
 
-OBJ = primes.o thread_pool.o # heaan_number.o
+OBJ = zp.o primes.o thread_pool.o # heaan_number.o
 
 all: libliphe.a libHelibLiphe.a
 
