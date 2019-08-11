@@ -14,6 +14,7 @@ private:
 
 	long _p;
 	long _r;
+	long _m;
 public:
 	HelibKeys() : _publicKey(NULL), _secretKey(NULL), _ea(NULL), _context(NULL), _p(0), _r(0) {}
 	HelibKeys(const HelibKeys &h) : _publicKey(h._publicKey), _secretKey(h._secretKey), _ea(h._ea), _context(h._context), _p(h._p), _r(h._r) {}
@@ -26,6 +27,7 @@ public:
 
 	long &p() { return _p; }
 	long &r() { return _r; }
+	long &m() { return _m; }
 
 	int nslots() const { return _ea->size(); }
 	int simd_factor() const { return nslots(); }

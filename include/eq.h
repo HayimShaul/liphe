@@ -7,7 +7,7 @@
 
 
 template<class CLASS>
-CLASS power(const CLASS &x, int e) {
+CLASS power(const CLASS &x, long e) {
 	assert(e > 0);
 	if (e == 2) {
 		CLASS y = x * x;
@@ -24,7 +24,7 @@ CLASS power(const CLASS &x, int e) {
 }
 
 template<class CLASS>
-CLASS power_mod(const CLASS &x, int e, int mod) {
+CLASS power_mod(const CLASS &x, long e, long mod) {
 	assert(e > 0);
 	if (e == 2) {
 		CLASS y = (x * x) % mod;

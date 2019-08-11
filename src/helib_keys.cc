@@ -26,13 +26,13 @@ void HelibKeys::initKeys(long s, long R, long p, long r, long d, long c, long k,
 			L += R * addPerRound;
 		}
 	}
-	long m = FindM(k, L, c, p, d, s, chosen_m, true);
+	_m = FindM(k, L, c, p, d, s, chosen_m, true);
 
 	vector<long> gens1, ords1;
 	convert(gens1, gens);
 	convert(ords1, ords);
 
-	_context = new FHEcontext(m, p, r, gens1, ords1);
+	_context = new FHEcontext(_m, p, r, gens1, ords1);
 	buildModChain(*_context, L, c);
 	_secretKey = new FHESecKey(*_context);
 	_secretKey->GenSecKey(w); // A Hamming-weight-w secret key
