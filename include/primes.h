@@ -47,7 +47,7 @@ public:
 };
 
 template<class CLASS>
-CLASS power(const CLASS &x, int e);
+CLASS power(const CLASS &x, long e);
 
 inline int phi(int p) {
 	int phi = 1;
@@ -64,6 +64,7 @@ inline int phi(int p) {
 	return phi;
 }
 
+#include "eq.h"
 
 #endif
 

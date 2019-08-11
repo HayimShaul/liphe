@@ -135,6 +135,54 @@ public:
 		return zp;
 	}
 
+	ZP operator-(long z) const { ZP zp(*this); zp -= z; return zp; }
+	ZP operator+(long z) const { ZP zp(*this); zp += z; return zp; }
+	ZP operator*(long z) const { ZP zp(*this); zp *= z; return zp; }
+
+	void operator-=(long z) {
+		for (unsigned int i = 0; i < SIMD_SIZE; ++i)
+			_val[i] = mod(_val[i] - z);
+		++_add_depth;
+	}
+
+	void operator+=(long z) {
+		for (unsigned int i = 0; i < SIMD_SIZE; ++i)
+			_val[i] = mod(_val[i] + z);
+		++_add_depth;
+	}
+
+	void operator*=(long z) {
+		for (unsigned int i = 0; i < SIMD_SIZE; ++i)
+			_val[i] = mod(_val[i] * z);
+		++_add_depth;
+	}
+
+	ZP operator-(const std::vector<long> &z) const { ZP zp(*this); zp -= z; return zp; }
+	ZP operator+(const std::vector<long> &z) const { ZP zp(*this); zp += z; return zp; }
+	ZP operator*(const std::vector<long> &z) const { ZP zp(*this); zp *= z; return zp; }
+
+	void operator-=(const std::vector<long> & z) {
+		unsigned int S = (SIMD_SIZE < z.size()) ? SIMD_SIZE : z.size();
+		for (unsigned int i = 0; i < S; ++i)
+			_val[i] = mod(_val[i] - z[i]);
+		++_add_depth;
+	}
+
+	void operator+=(const std::vector<long> & z) {
+		unsigned int S = (SIMD_SIZE < z.size()) ? SIMD_SIZE : z.size();
+		for (unsigned int i = 0; i < S; ++i)
+			_val[i] = mod(_val[i] + z[i]);
+		++_add_depth;
+	}
+
+	void operator*=(const std::vector<long> & z) {
+		unsigned int S = (SIMD_SIZE < z.size()) ? SIMD_SIZE : z.size();
+		for (unsigned int i = 0; i < S; ++i)
+			_val[i] = mod(_val[i] * z[i]);
+		++_add_depth;
+	}
+
+
 	ZP operator-(const ZP &z) const { ZP zp(*this); zp -= z; return zp; }
 	ZP operator+(const ZP &z) const { ZP zp(*this); zp += z; return zp; }
 	ZP operator*(const ZP &z) const { ZP zp(*this); zp *= z; return zp; }
