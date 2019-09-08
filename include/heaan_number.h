@@ -37,7 +37,7 @@ public:
 		}
 
 
-	double to_float() {
+	double to_float() const {
 		return _keys->decrypt(_val);
 //		complex<double>* m = _keys->scheme()->decrypt(_keys->secretKey(), &_val);
 //		double ret = m->real();
@@ -68,10 +68,13 @@ public:
 		return ret;
 	}
 
-	HeaanNumber &operator*=(const HeaanNumber &_f) {
+	HeaanNumber &operator*=(HeaanNumber &f) {
 		// HEAAN operators do not get const arguments :(
-		HeaanNumber f(_f);
-		_keys->scheme()->mult(_val, _val, f._val);
+//		HeaanNumber f(_f);
+		if (&f.val == &_val)
+			_keys->scheme()->imultAndEqual(_val);
+		else
+			_keys->scheme()->imult(_val, f._val);
 		_keys->scheme()->reScaleByAndEqual(_val, _keys->logP());
 		_mul_depth = std::max(_mul_depth, f._mul_depth) + 1;
 		return *this;
@@ -79,7 +82,7 @@ public:
 
 	HeaanNumber &operator*=(const double _f) {
 		// HEAAN operators do not get const arguments :(
-		_keys->scheme()->multByConst(_val, _val, _f, _keys->logP());
+		_keys->scheme()->imultByConst(_val, _f, _keys->logP());
 		_keys->scheme()->reScaleByAndEqual(_val, _keys->logP());
 		_mul_depth += 1;
 		return *this;
@@ -95,7 +98,7 @@ public:
 		while (mul_depth() > f.mul_depth())
 			f.increase_mul_depth();
 
-		_keys->scheme()->add(_val, _val, f._val);
+		_keys->scheme()->iadd(_val, f._val);
 		_add_depth = std::max(_add_depth, f._add_depth) + 1;
 		return *this;
 	}
@@ -114,7 +117,7 @@ public:
 		while (mul_depth() > f.mul_depth())
 			f.increase_mul_depth();
 
-		_keys->scheme()->sub(_val, _val, f._val);
+		_keys->scheme()->isub(_val, f._val);
 		_add_depth = std::max(_add_depth, f._add_depth) + 1;
 		return *this;
 	}

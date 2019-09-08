@@ -89,18 +89,20 @@ public:
 	}
 
 	Number operator<(const int b) const {
-		if (b > Number::ring_size())
+		if (b > Number::get_global_ring_size())
 			return Number(1);
 		if (b <= 0)
 			return Number(0);
 
-		auto key = std::pair<int,int>(Number::ring_size(), b);
+		auto key = std::pair<int,int>(Number::get_global_ring_size(), b);
 		auto poly = _smaller_poly.find(key);
 		if (poly == _smaller_poly.end()) {
-			poly = _smaller_poly.insert(key, Polynomial<Number>::build_polynomial(Number::ring_size(), Number::ring_size(), [b](int x)->int{ return (x < b) ? 1 : 0; }) );
+			Polynomial<Number> new_poly = Polynomial<Number>::build_polynomial(Number::get_global_ring_size(), Number::get_global_ring_size(), [b](int x)->int{ return (x < b) ? 1 : 0; });
+			auto add = std::pair<std::pair<int,int>, Polynomial<Number> >(key, new_poly);
+			poly = _smaller_poly.insert(add).first;
 		}
 
-		return (*poly).compute(_val);
+		return (*poly).second.compute(_val);
 	}
 
 	Number operator>(const int b) const {

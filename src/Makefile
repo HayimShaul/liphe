@@ -6,8 +6,8 @@ NTLLIBDIR = -L../../ntl-10.5.0-multithread/src
 HELIBINCDIR = -I../../HElib-multithread/src
 HELIBLIBDIR = -L../../HElib-multithread/src
 
-HEAANINCDIR = -I../../HEAAN/HEAAN/src
-HEAANLIBDIR = -L../../HEAAN/HEAAN/src
+HEAANINCDIR = -I../../HEAAN_v2.1/HEAAN/src
+HEAANLIBDIR = -L../../HEAAN_v2.1/HEAAN/src
 
 LIPHEINCDIR = -I../include
 INCS = $(NTLINCDIR) $(HELIBINCDIR) $(LIPHEINCDIR) $(HEAANINCDIR)
