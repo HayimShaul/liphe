@@ -102,7 +102,7 @@ public:
 			_val[i] /= _p;
 	}
 
-	ZP shift_left(int step) const {
+	ZP shift_left(unsigned int step) const {
 		ZP ret(*this);
 
 		for (unsigned int i = 0; i < SIMD_SIZE; ++i)
@@ -111,11 +111,11 @@ public:
 		return ret;
 	}
 
-	ZP shift_right(int step) const {
+	ZP shift_right(unsigned int step) const {
 		ZP ret(*this);
 
 		for (unsigned int i = 0; i < SIMD_SIZE; ++i)
-			if (i - step >= 0)
+			if (i >= step)
 				ret._val[i] = _val[i - step];
 		return ret;
 	}

@@ -138,20 +138,17 @@ public:
 	HelibNumber operator+(const std::vector<long> &z) const { HelibNumber zp(*this); zp += z; return zp; }
 	HelibNumber operator*(const std::vector<long> &z) const { HelibNumber zp(*this); zp *= z; return zp; }
 
-	void operator-=(long z) {
-		ZZX z_poly;
-		_keys->encode(z_poly, -z);
-		_val.addConstant(z_poly);
+	void operator-=(long _z) {
+		std::vector<long> z((unsigned long)_keys->simd_factor(), _z);
+		operator-=(z);
 	}
-	void operator+=(long z) {
-		ZZX z_poly;
-		_keys->encode(z_poly, z);
-		_val.addConstant(z_poly);
+	void operator+=(long _z) {
+		std::vector<long> z((unsigned long)_keys->simd_factor(), _z);
+		operator+=(z);
 	}
-	void operator*=(long z) {
-		ZZX z_poly;
-		_keys->encode(z_poly, z);
-		_val.multByConstant(z_poly);
+	void operator*=(long _z) {
+		std::vector<long> z((unsigned long)_keys->simd_factor(), _z);
+		operator*=(z);
 	}
 
 	void operator-=(const std::vector<long> &_z) {
@@ -164,12 +161,24 @@ public:
 		_keys->encode(z_poly, z);
 		_val.addConstant(z_poly);
 	}
-	void operator+=(const std::vector<long> &z) {
+	void operator+=(const std::vector<long> &_z) {
+		std::vector<long> z(std::max(_z.size(), (unsigned long)_keys->simd_factor()));
+		for (unsigned int i = 0; i < _z.size(); ++i)
+			z[i] = _z[i];
+		for (unsigned int i = _z.size(); i < z.size(); ++i)
+			z[i] = 0;
+
 		ZZX z_poly;
 		_keys->encode(z_poly, z);
 		_val.addConstant(z_poly);
 	}
-	void operator*=(const std::vector<long> &z) {
+	void operator*=(const std::vector<long> &_z) {
+		std::vector<long> z(std::max(_z.size(), (unsigned long)_keys->simd_factor()));
+		for (unsigned int i = 0; i < _z.size(); ++i)
+			z[i] = _z[i];
+		for (unsigned int i = _z.size(); i < z.size(); ++i)
+			z[i] = 0;
+
 		ZZX z_poly;
 		_keys->encode(z_poly, z);
 		_val.multByConstant(z_poly);
