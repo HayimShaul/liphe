@@ -49,7 +49,7 @@ private:
 	void print(const char *s) {}
 public:
 	HelibNumber() : _keys(_getKeys()), _val(_getKeys()->publicKey()), _mul_depth(0), _add_depth(0) { print("allocating"); }
-	HelibNumber(long long v) : _keys(_getKeys()), _val(_keys->publicKey()), _mul_depth(0), _add_depth(0) { _keys->encrypt(_val, v); print("allocating"); }
+	HelibNumber(long long v) : _keys(_getKeys()), _val(_keys->publicKey()), _mul_depth(0), _add_depth(0) { _keys->encrypt(_val, std::vector<long>(simd_factor(), v)); print("allocating"); }
 	HelibNumber(const std::vector<long> &v) : _keys(_getKeys()), _val(_keys->publicKey()), _mul_depth(0), _add_depth(0) { _keys->encrypt(_val, v); print("allocating"); }
 	HelibNumber(const HelibNumber &n) : _keys(n._keys), _val(n._val), _mul_depth(n._mul_depth), _add_depth(n._add_depth) {print("allocating"); }
 	HelibNumber(const Ctxt &n) : _keys(_getKeys()), _val(n), _mul_depth(0), _add_depth(0) {print("allocating"); }
