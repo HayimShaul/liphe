@@ -5,9 +5,9 @@
 #include <string.h>
 #include <algorithm>
 
-#include <NTL/ZZ_p.h>
 #include <NTL/ZZ_pX.h>
 
+#include "thread_pool.h"
 #include "binomial_tournament.h"
 
 
@@ -42,6 +42,12 @@ public:
 	Polynomial(int n, const char *x = NULL) : _mod(0) { set(n, x); }
 
 	Polynomial &set_mod(int n) { _mod = n; return *this; }
+
+	Polynomial &operator=(const Polynomial &p) {
+		_coef = p._coef;
+		_mod = p._mod;
+		return *this;
+	}
 
 	Polynomial operator*(const Polynomial<Number> &p) const { Polynomial<Number> q(*this); q *= p; return q; }
 	void operator*=(const Polynomial<Number> &p) {
@@ -107,7 +113,6 @@ public:
 	// no need to optimize this because this is happening in plain text anyway
 	void operator^=(int p) { *this = (*this) ^ p; }
 	Polynomial<Number> operator^(int p) const {
-std::cerr << "computing power of " << p << std::endl;
 		if (p == 0)
 			return Polynomial<Number>(1).set_mod(_mod);
 
@@ -192,13 +197,7 @@ std::cerr << "computing power of " << p << std::endl;
 		_coef[n] = c;
 	}
 
-	int get_coef(int n) {
-		if (n >= _coef.size())
-			return 0;
-		return _coef[n];
-	}
-
-	Number batch_coefficient(const std::vector<int> &coef, int start, int end, const Number *powers) const {
+	static Number batch_coefficient(const std::vector<int> &coef, int start, int end, const Number *powers) {
 		AddBinomialTournament<Number> ret;
 
 		ret.add_to_tournament(Number(coef[start]));
@@ -209,7 +208,13 @@ std::cerr << "computing power of " << p << std::endl;
 		return ret.unite_all();
 	}
 
-	Number compute(const Number &x, const Number *powers, int batch_size) const {
+	Number compute(const Number &x, const Number *powers, int batch_size, ThreadPool *threads) const {
+		Number ret;
+		compute(ret, x, powers, batch_size, threads);
+		return ret;
+	}
+
+	void compute(Number &ret, const Number &x, const Number *powers, int batch_size, ThreadPool *threads) const {
 		Polynomial<Number> p = (*this) % x.p();
 
 //		for (int i = 0; i < coef.size(); ++i)
@@ -226,30 +231,74 @@ std::cerr << "computing power of " << p << std::endl;
 			batch_multiplier[1] = powers[batch_size/2] * powers[(batch_size+1)/2];
 
 
-		Number ret = batch_coefficient(p._coef, /*start=*/ 0, /*end=*/batch_size, powers);
-		ret += batch_coefficient(p._coef, /*start=*/ batch_size, /*end=*/ std::min(2*batch_size, p.deg()+1), powers) * batch_multiplier[1];
+		AddBinomialTournament<Number> add_ret;
+		std::mutex access_ret;
+
+		std::function<void(Number)> add_to_ret([&add_ret, &access_ret](Number a) {
+			access_ret.lock();
+			add_ret.add_to_tournament(a);
+			access_ret.unlock();
+		});
+
+		std::function<void(std::function<void(void)>) > run([threads](const std::function<void(void)> &f) {
+			if (threads == NULL) {
+				f();
+			} else {
+				threads->submit_job(f);
+			}
+		});
+
+		run(std::function<void(void)>([&p, batch_size, powers, &add_to_ret](){
+			add_to_ret( batch_coefficient(p._coef, /*start=*/ 0, /*end=*/batch_size, powers) );
+		}));
+
+		run(std::function<void(void)>([&p, batch_size, powers, batch_multiplier, &add_to_ret](){
+			add_to_ret( batch_coefficient(p._coef, /*start=*/ batch_size, /*end=*/ std::min(2*batch_size, p.deg()+1), powers) * batch_multiplier[1] );
+		}));
+
 
 		for (int i = 2; i < batch_number; ++i) {
 			int a = i/2;
 			int b = (i+1)/2;
 			batch_multiplier[i] = batch_multiplier[a] * batch_multiplier[b];
-			ret += batch_coefficient(p._coef, /*start=*/ i*batch_size, (i+1)*batch_size, powers) * batch_multiplier[i];
+
+			run(std::function<void(void)>([&p, i, batch_size, powers, batch_multiplier, &add_to_ret]() {
+				add_to_ret( batch_coefficient(p._coef, /*start=*/ i*batch_size, (i+1)*batch_size, powers) * batch_multiplier[i] );
+			}));
 		}
 
 		if (batch_number * batch_size < p.deg()+1) {
-			int a = batch_number/2;
-			int b = (batch_number+1)/2;
-			Number batch_mult = batch_multiplier[a] * batch_multiplier[b];
-			ret += batch_coefficient(p._coef, /*start=*/ batch_number*batch_size, p.deg()+1, powers) * batch_mult;
+
+			run(std::function<void(void)>([&p, batch_number, batch_size, powers, batch_multiplier, &add_to_ret]() {
+				int a = batch_number/2;
+				int b = (batch_number+1)/2;
+				add_to_ret( batch_coefficient(p._coef, /*start=*/ batch_number*batch_size, p.deg()+1, powers) * batch_multiplier[a] * batch_multiplier[b] );
+			}));
 		}
 
-		delete[] batch_multiplier;
+		if (threads != NULL)
+			threads->process_jobs();
 
-		return ret;
+//		for (int i = 2; i < batch_number; ++i) {
+//			int a = i/2;
+//			int b = (i+1)/2;
+//			batch_multiplier[i] = batch_multiplier[a] * batch_multiplier[b];
+//			ret += batch_coefficient(p._coef, /*start=*/ i*batch_size, (i+1)*batch_size, powers) * batch_multiplier[i];
+//		}
+//
+//		if (batch_number * batch_size < p.deg()+1) {
+//			int a = batch_number/2;
+//			int b = (batch_number+1)/2;
+//			Number batch_mult = batch_multiplier[a] * batch_multiplier[b];
+//			ret += batch_coefficient(p._coef, /*start=*/ batch_number*batch_size, p.deg()+1, powers) * batch_mult;
+//		}
+
+		delete[] batch_multiplier;
+		ret = add_ret.unite_all();
 	}
 
 	Number *compute_powers(const Number &x, int &batch_size) const {
-		if (batch_size == 0) {
+		if (batch_size <= 0) {
 			int degree = deg() % x.p();
 			batch_size = sqrt(degree + 1);
 			if (batch_size * batch_size < degree + 1)
@@ -271,7 +320,13 @@ std::cerr << "computing power of " << p << std::endl;
 		return powers;
 	}
 
-	Number compute(const Number &x) const {
+	Number compute(const Number &x, ThreadPool *threads = NULL) const {
+		Number ret;
+		compute(ret, x, threads);
+		return ret;
+	}
+
+	void compute(Number &ret, const Number &x, ThreadPool *threads = NULL) const {
 		Polynomial<Number> p = (*this) % x.p();
 
 //		for (int i = 0; i < coef.size(); ++i)
@@ -285,10 +340,13 @@ std::cerr << "computing power of " << p << std::endl;
 		
 		Number *powers = compute_powers(x, batch_size);
 
-		Number ret = compute(x, powers, batch_size);
-		delete[] powers;
+		if (batch_size == 0) {
+			std::cerr << "Error: batch size is 0\n";
+			powers = compute_powers(x, batch_size);
+		}
 
-		return ret;
+		compute(ret, x, powers, batch_size, threads);
+		delete[] powers;
 
 
 //		int batch_number = (p.deg() + 1) / batch_size;
@@ -345,8 +403,8 @@ std::cerr << "computing power of " << p << std::endl;
 
 
 
-	static inline const NTL::ZZ_pX poly_mul(const NTL::ZZ_pX &p1, const NTL::ZZ_pX &p2, int mod) {
-		NTL::ZZ_pX ret = p1 * p2;
+	static inline const ZZ_pX poly_mul(const ZZ_pX &p1, const ZZ_pX &p2, int mod) {
+		ZZ_pX ret = p1 * p2;
 
 		int phi_mod = phi(mod);
 		for (int i = mod; i <= NTL::deg(ret); ++i) {
@@ -360,9 +418,7 @@ std::cerr << "computing power of " << p << std::endl;
 		return ret;
 	}
 
-	static inline const NTL::ZZ_pX poly_power(const NTL::ZZ_pX &poly, int e, int mod) {
-		assert(e > 0);
-
+	static inline const ZZ_pX poly_power(const ZZ_pX &poly, int e, int mod) {
 		if (e == 1)
 			return poly;
 
@@ -374,13 +430,13 @@ std::cerr << "computing power of " << p << std::endl;
 
 
 	// return the polynomial (x-y)
-	static NTL::ZZ_pX x_(int y) { return NTL::ZZ_pX(NTL::INIT_MONO, 0, -y) + NTL::ZZ_pX(NTL::INIT_MONO, 1, 1); }
+	static ZZ_pX x_(int y) { return ZZ_pX(INIT_MONO, 0, -y) + ZZ_pX(INIT_MONO, 1, 1); }
 
 
 	static Polynomial<Number> build_polynomial(int p, int range, const std::function<int(int)> &func) {
 		NTL::ZZ_p::init(NTL::ZZ(p));
 
-		NTL::ZZ_pX poly(NTL::INIT_MONO, 0, 0);
+		ZZ_pX poly(INIT_MONO, 0, 0);
 
 		int phi_p = phi(p);
 
@@ -392,7 +448,7 @@ std::cerr << "computing power of " << p << std::endl;
 
 			int y = func(x);
 
-			NTL::ZZ_pX ind(NTL::INIT_MONO, 0, 1);
+			ZZ_pX ind(INIT_MONO, 0, 1);
 //std::cout << ind << std::endl;
 
 			while ((x < range) && ((func(x) == y) || (func(x) == 0))) {
@@ -407,10 +463,10 @@ std::cerr << "computing power of " << p << std::endl;
 			ind = poly_power(ind, phi_p, p);
 			// now ind is an inverse indicator getting 0 for x iff func(x)=y, 1 otherwise
 
-			ind = NTL::ZZ_pX(NTL::INIT_MONO, 0, 1) - ind;
+			ind = ZZ_pX(INIT_MONO, 0, 1) - ind;
 			// now ind is an inverse indicator getting 1 for x iff func(x)=y, 0 otherwise
 
-			poly += poly_mul(ind, NTL::ZZ_pX(NTL::INIT_MONO, 0, y), p);
+			poly += poly_mul(ind, ZZ_pX(INIT_MONO, 0, y), p);
 //std::cout << "poly = " << poly << std::endl;
 
 		}
@@ -429,49 +485,9 @@ std::cerr << "computing power of " << p << std::endl;
 		return ret;
 	}
 
-	template<class SourceIterator>
-	static Polynomial<Number> build_polynomial_with_small_source(int ringSize, const SourceIterator &imageBegin, const SourceIterator &imageEnd, const std::function<int(int)> &func) {
-		NTL::ZZ_p::init(NTL::ZZ(ringSize));
-
-		NTL::ZZ_pX poly(NTL::INIT_MONO, 0, 0);
-
-		int phi_p = phi(ringSize);
-
-		for (SourceIterator img = imageBegin; img != imageEnd; ++img) {
-			NTL::ZZ_pX monomial(NTL::INIT_MONO, 0, 1);
-			NTL::ZZ_pX coefficient(NTL::INIT_MONO, 0, 1);
-			for (SourceIterator x = imageBegin; x != imageEnd; ++x) {
-				if (x != img) {
-					monomial = poly_mul(monomial, x_(*x), ringSize);
-					coefficient = poly_mul(coefficient, NTL::ZZ_pX(NTL::INIT_MONO, 0, (*img) - (*x)), ringSize);
-				}
-			}
-			coefficient = poly_power(coefficient, phi_p - 1, ringSize);
-
-			poly += monomial * coefficient * NTL::ZZ_pX(NTL::INIT_MONO, 0, func(*img));
-		}
-
-		std::vector<int> coef(NTL::deg(poly) + 1);
-		for (int i = 0; i < coef.size(); ++i) {
-			conv(coef[i], poly[i]);
-		}
-
-		Polynomial<Number> ret = Polynomial(coef, ringSize);
-		return ret;
-	}
 
 };
 
-
-template<class Number>
-std::ostream &operator<<(std::ostream &out, Polynomial<Number> &o) {
-	for (int i = o.deg(); i >= 0; --i) {
-		out << o.get_coef(i) << "*x^" << i;
-		if (i != 0)
-			out << " ";
-	}
-	return out;
-}
 
 
 #endif
