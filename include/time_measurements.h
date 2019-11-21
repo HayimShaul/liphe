@@ -30,9 +30,15 @@ public:
 
 	std::string stats(const std::string &label) {
 		std::stringstream str;
-		str << label << " took " << _total << " cpu and " << _real_total << " time";
+
+//		str << label << " took " << _total << " cpu and " << _real_total << " time";
+//		if (_real_total > 0)
+//			str << ", which is a parallelization factor of " << (0.01*((int) (_total / 10000) / _real_total));
+
+		str << label << " took " << (0.01*(_total / 10000)) << " cpu sec and " << (0.01*(_real_total/10000)) << " sec in real time";
 		if (_real_total > 0)
-			str << ", which is a parallelization factor of " << (0.01*((int) (_total / 10000) / _real_total));
+			str << ", which is a parallelization factor of " << (0.01*((int) (100 * _total  / _real_total)));
+
 		str << std::endl;
 		return str.str();
 	}
